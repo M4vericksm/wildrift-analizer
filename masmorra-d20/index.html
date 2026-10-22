@@ -1,0 +1,1339 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Masmorra do D20</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Grenze+Gotisch:wght@600;800&family=Grenze:wght@500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;700&family=Atkinson+Hyperlegible+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: mesa de jogo. Trilho de iniciativa no topo; grupo, inimigos com bandeja de dados e ações, e diário em colunas. No celular, empilha na ordem em que se joga. */
+:root{
+  --felt:#DCE4DA; --felt-2:#C9D5C8; --sheet:#F8FAF6; --sheet-2:#EAF0E9; --ink:#14201A; --muted:#44554B; --line:#A3B5A8;
+  --brass:#6E4E0B; --gold:#D9B45A; --gold-ink:#1C1505;
+  --blood:#9A2216; --heal:#1A6234; --magic:#4232A3; --focus:#2450D6;
+  --tray:#1B2721; --tray-2:#26372E; --tray-ink:#F3ECD6; --tray-muted:#C4BDA8;
+  --tray-hit:#9BE3B0; --tray-crit:#F5CE6B; --tray-fail:#FF9C8C; --tray-heal:#A6E8C0;
+  --f-display:"Grenze Gotisch","Palatino Linotype",Palatino,"Book Antiqua",Georgia,serif;
+  --f-head:"Grenze",Georgia,"Times New Roman",serif;
+  --f-body:"Atkinson Hyperlegible Next","Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"Atkinson Hyperlegible Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
+  --t-xs:.8125rem; --t-s:.9375rem; --t-m:1.0625rem; --t-l:1.375rem; --t-xl:2rem; --t-xxl:clamp(2.6rem,8vw,4.75rem);
+  --r:6px;
+  padding-block:env(safe-area-inset-top,0px) env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --felt:#0E1914; --felt-2:#17291F; --sheet:#16251E; --sheet-2:#1D3026; --ink:#E6ECE4; --muted:#A2B4A8; --line:#3A5646;
+    --brass:#E2BE66; --blood:#F4877A; --heal:#80D89E; --magic:#B5ADFF; --focus:#93B4FF;
+    --tray:#08110D; --tray-2:#15231C; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --felt:#0E1914; --felt-2:#17291F; --sheet:#16251E; --sheet-2:#1D3026; --ink:#E6ECE4; --muted:#A2B4A8; --line:#3A5646;
+  --brass:#E2BE66; --blood:#F4877A; --heal:#80D89E; --magic:#B5ADFF; --focus:#93B4FF;
+  --tray:#08110D; --tray-2:#15231C; color-scheme:dark;
+}
+html.grande{font-size:125%}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{
+  margin:0; min-height:100%;
+  background-color:var(--felt);
+  background-image:radial-gradient(120% 70% at 50% -15%, var(--felt-2), transparent 70%);
+  background-repeat:no-repeat;
+  color:var(--ink); font-family:var(--f-body); font-size:var(--t-m); line-height:1.5;
+  padding-left:max(16px, env(safe-area-inset-left,0px));
+  padding-right:max(16px, env(safe-area-inset-right,0px));
+  padding-block:12px 40px;
+}
+h1,h2,h3{margin:0; text-wrap:balance; line-height:1.15}
+p{margin:0}
+button,input,select{font:inherit; color:inherit}
+a{color:var(--magic)}
+:focus-visible{outline:3px solid var(--focus); outline-offset:2px}
+.sr-only{position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0}
+.wrap{max-width:1440px; margin:0 auto; display:grid; gap:20px}
+.wrap > *{min-width:0}
+
+.kicker{font-size:var(--t-xs); font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--muted)}
+.label{font-family:var(--f-head); font-weight:700; font-size:var(--t-s); letter-spacing:.07em; text-transform:uppercase; color:var(--muted)}
+.muted{color:var(--muted)}
+.n{font-family:var(--f-mono); font-weight:700}
+
+.btn{
+  min-height:48px; padding:.55rem 1rem; border:1px solid var(--line); border-radius:var(--r);
+  background:var(--sheet); cursor:pointer; font-weight:700; text-align:center;
+}
+.btn:hover:not(:disabled){border-color:var(--brass)}
+.btn-primary{background:var(--gold); color:var(--gold-ink); border-color:var(--gold)}
+.btn-primary:hover:not(:disabled){border-color:var(--gold-ink)}
+.btn-quiet{background:transparent}
+.btn-grande{font-size:var(--t-l); min-height:56px; padding:.7rem 1.6rem}
+button:disabled{cursor:not-allowed; opacity:.6}
+
+/* barra superior */
+.topo{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px 16px}
+.marca{font-family:var(--f-display); font-weight:800; font-size:var(--t-l); color:var(--brass); letter-spacing:.01em}
+.ferramentas{display:flex; flex-wrap:wrap; align-items:center; gap:8px}
+.chave{display:flex; align-items:center; gap:8px; min-height:48px; padding:0 12px; border:1px solid var(--line); border-radius:var(--r); background:var(--sheet); cursor:pointer; font-weight:700; font-size:var(--t-s)}
+.chave input{width:20px; height:20px; accent-color:var(--brass); margin:0}
+
+/* início */
+.abertura{display:grid; gap:14px; max-width:64ch; padding-block:18px 4px}
+.titulo{font-family:var(--f-display); font-weight:800; font-size:var(--t-xxl); line-height:.95; letter-spacing:-.005em}
+.titulo span{color:var(--brass)}
+.lede{font-size:var(--t-l); line-height:1.45}
+.secao{display:grid; gap:12px}
+.salvo{display:flex; flex-wrap:wrap; align-items:center; gap:12px; padding:14px 16px; border:1px solid var(--brass); border-radius:var(--r); background:var(--sheet)}
+.salvo p{flex:1 1 260px; min-width:0}
+.elenco{display:grid; gap:16px; grid-template-columns:repeat(auto-fill, minmax(min(100%, 290px), 1fr))}
+.recruta{border:1px solid var(--line); background:var(--sheet); border-radius:var(--r); padding:12px 14px 14px; margin:0; display:grid; gap:10px; min-width:0}
+.recruta legend{font-family:var(--f-head); font-weight:700; font-size:var(--t-s); letter-spacing:.07em; text-transform:uppercase; color:var(--muted); padding:0 6px}
+.campos{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:8px}
+.campo{display:grid; gap:4px; min-width:0}
+.campo label{font-size:var(--t-xs); font-weight:700; color:var(--muted)}
+.campo input,.campo select{width:100%; min-height:48px; padding:0 10px; border:1px solid var(--line); border-radius:var(--r); background:var(--sheet-2)}
+.cls-desc{font-size:var(--t-s)}
+.atributos{display:grid; grid-template-columns:repeat(6, minmax(0,1fr)); gap:4px; margin:0}
+.atributos div{text-align:center; background:var(--sheet-2); border-radius:4px; padding:6px 0 5px}
+.atributos .principal{box-shadow:inset 0 0 0 2px var(--brass)}
+.atributos dt{font-size:var(--t-xs); font-weight:700; color:var(--muted); letter-spacing:.04em}
+.atributos dd{margin:0; font-family:var(--f-mono); font-weight:700; font-variant-numeric:tabular-nums}
+.atributos dd.mod{font-size:var(--t-xs); color:var(--muted); font-weight:500}
+.derivados{font-family:var(--f-mono); font-size:var(--t-s); font-variant-numeric:tabular-nums}
+.rolagens{font-size:var(--t-xs); color:var(--muted)}
+.rec-botoes{display:flex; flex-wrap:wrap; gap:8px}
+.dificuldade{border:0; padding:0; margin:0; display:grid; gap:10px; min-width:0}
+.dificuldade legend{padding:0; margin-bottom:10px}
+.radios{display:grid; gap:8px; grid-template-columns:repeat(auto-fit, minmax(min(100%, 220px), 1fr))}
+.radio{display:flex; gap:10px; align-items:flex-start; padding:12px; min-height:48px; border:1px solid var(--line); border-radius:var(--r); background:var(--sheet); cursor:pointer}
+.radio input{width:20px; height:20px; margin:2px 0 0; accent-color:var(--brass); flex:none}
+.radio:has(input:checked){border-color:var(--brass); box-shadow:0 0 0 1px var(--brass)}
+.radio small{display:block; color:var(--muted); font-size:var(--t-xs)}
+.partida{display:flex; flex-wrap:wrap; align-items:center; gap:12px 16px}
+.aviso{font-size:var(--t-s); color:var(--muted)}
+.regras{background:var(--sheet); border:1px solid var(--line); border-radius:var(--r); padding:0 16px}
+.regras summary{cursor:pointer; font-family:var(--f-head); font-weight:700; font-size:var(--t-l); min-height:48px; padding:10px 0; display:list-item}
+.regras dl{margin:0 0 16px; display:grid; gap:4px 0; max-width:70ch}
+.regras dt{font-family:var(--f-head); font-weight:700; color:var(--brass); margin-top:8px}
+.regras dd{margin:0}
+.creditos{font-size:var(--t-xs); color:var(--muted); max-width:80ch}
+
+/* história */
+.historia{max-width:74ch; width:100%; margin:0 auto; display:grid; gap:28px; padding-block:12px}
+.historia section{display:grid; gap:14px}
+.titulo-cena{font-family:var(--f-display); font-weight:800; font-size:var(--t-xl); line-height:1.05}
+.narracao{font-size:var(--t-l); line-height:1.55}
+.narracao.abre::first-letter{font-family:var(--f-display); font-weight:800; float:left; font-size:3.4em; line-height:.8; margin:.06em .1em 0 0; color:var(--brass)}
+.pela-frente{display:flex; flex-wrap:wrap; gap:4px 10px; align-items:baseline; padding:12px 14px; background:var(--sheet); border:1px solid var(--line); border-radius:var(--r)}
+.colunas{display:grid; gap:20px; grid-template-columns:repeat(auto-fit, minmax(min(100%, 280px), 1fr))}
+.colunas > div{display:grid; gap:8px; align-content:start}
+.lista{margin:0; padding-left:1.1rem; display:grid; gap:6px}
+.separador{border:0; border-top:1px solid var(--line); margin:0}
+
+/* combate */
+.cena-topo{display:flex; flex-wrap:wrap; align-items:flex-end; justify-content:space-between; gap:6px 16px}
+.cena-topo > div{display:grid; gap:2px}
+.rodada{font-family:var(--f-mono); font-weight:700; font-size:var(--t-l)}
+.pular{position:absolute; left:-9999px}
+.pular:focus{position:static}
+.ini-wrap{overflow-x:auto; padding-bottom:4px}
+.ini{list-style:none; margin:0; padding:0; display:flex; gap:6px; width:max-content}
+.ini li{display:flex; align-items:center; gap:6px; padding:6px 12px; border:1px solid var(--line); border-radius:999px; background:var(--sheet); font-size:var(--t-s); white-space:nowrap}
+.ini .ini-n{font-family:var(--f-mono); font-weight:700; color:var(--brass)}
+.ini li.inimigo .ini-n{color:var(--blood)}
+.ini li.agora{background:var(--gold); color:var(--gold-ink); border-color:var(--gold)}
+.ini li.agora .ini-n{color:var(--gold-ink)}
+.ini li.fora{text-decoration:line-through; color:var(--muted)}
+
+.mesa{display:grid; gap:16px; grid-template-columns:minmax(0,1fr); grid-template-areas:"foes" "tray" "panel" "party" "log"; align-items:start}
+.a-grupo{grid-area:party} .a-inimigos{grid-area:foes} .a-bandeja{grid-area:tray} .a-painel{grid-area:panel} .a-diario{grid-area:log}
+@media (min-width:760px){
+  .mesa{grid-template-columns:minmax(0,1fr) minmax(0,1fr); grid-template-areas:"foes foes" "tray panel" "party panel" "log log"}
+}
+@media (min-width:1180px){
+  .mesa{grid-template-columns:minmax(0,.92fr) minmax(0,1.38fr) minmax(0,.9fr); grid-template-areas:"party foes log" "party tray log" "party panel log"; grid-template-rows:auto auto 1fr}
+}
+.coluna{display:grid; gap:10px; min-width:0}
+.cartas{display:grid; gap:10px; grid-template-columns:repeat(auto-fill, minmax(min(100%, 210px), 1fr))}
+.a-grupo .cartas{grid-template-columns:repeat(auto-fill, minmax(min(100%, 230px), 1fr))}
+
+.ficha{background:var(--sheet); border:1px solid var(--line); border-radius:var(--r); padding:12px 14px; display:grid; gap:8px; min-width:0}
+.ficha.agora{border-color:var(--brass); box-shadow:0 0 0 2px var(--brass)}
+.ficha-topo{display:flex; align-items:center; gap:10px; min-width:0}
+.ficha-id{flex:1; min-width:0}
+.ficha h3{font-family:var(--f-head); font-weight:700; font-size:var(--t-l); overflow-wrap:anywhere}
+.ficha .sub{font-size:var(--t-s); color:var(--muted)}
+.token{flex:none; width:44px; height:44px; border-radius:50%; display:grid; place-items:center; border:2px solid var(--brass); background:var(--sheet-2); font-family:var(--f-display); font-weight:800; font-size:var(--t-l); line-height:1}
+.inimigo .token{border-color:var(--blood); color:var(--blood)}
+.vez{flex:none; background:var(--gold); color:var(--gold-ink); font-size:var(--t-xs); font-weight:700; letter-spacing:.06em; text-transform:uppercase; padding:3px 9px; border-radius:999px}
+.pv{display:grid; gap:4px}
+.pv-txt{font-family:var(--f-mono); font-size:var(--t-s); font-variant-numeric:tabular-nums}
+.barra{display:block; height:8px; border-radius:4px; background:var(--sheet-2); box-shadow:inset 0 0 0 1px var(--line); overflow:hidden}
+.barra i{display:block; height:100%; border-radius:4px; transition:width .35s ease}
+.barra .ok{background:var(--heal)} .barra .meio{background:var(--brass)} .barra .baixo{background:var(--blood)}
+.mini{display:flex; flex-wrap:wrap; gap:4px 18px; margin:0}
+.mini dt{font-size:var(--t-xs); color:var(--muted); font-weight:700; letter-spacing:.05em; text-transform:uppercase}
+.mini dd{margin:0; font-family:var(--f-mono); font-weight:700; font-variant-numeric:tabular-nums}
+.tags{list-style:none; margin:0; padding:0; display:flex; flex-wrap:wrap; gap:6px}
+.tags li{font-size:var(--t-xs); font-weight:700; border:1px solid var(--line); border-radius:999px; padding:2px 9px}
+.tags li.perigo{color:var(--blood); border-color:var(--blood)}
+.tags li.bom{color:var(--heal); border-color:var(--heal)}
+.ficha.caido{background:var(--sheet-2)}
+.ficha.morto h3,.ficha.fora h3{text-decoration:line-through}
+.ficha.fora{border-style:dashed; background:transparent; color:var(--muted)}
+.ficha.fora .token{border-color:var(--line); color:var(--muted)}
+.derrotado{font-weight:700; font-size:var(--t-s)}
+.tracos{list-style:none; margin:0; padding:0; display:grid; gap:2px; font-size:var(--t-xs); color:var(--muted)}
+.alvejavel{cursor:pointer; border-color:var(--blood)}
+.alvejavel:hover{background:var(--sheet-2)}
+
+.bandeja{background:var(--tray); color:var(--tray-ink); border-radius:var(--r); padding:14px 16px; display:flex; align-items:center; gap:16px; box-shadow:inset 0 2px 14px rgba(0,0,0,.5); min-height:128px}
+.dado{position:relative; width:96px; height:96px; flex:none}
+.dado svg{display:block; width:100%; height:100%}
+.dado .face{fill:var(--tray-2); stroke:var(--gold); stroke-width:2.5; stroke-linejoin:round}
+.dado .tri{fill:none; stroke:var(--gold); stroke-width:2; stroke-linejoin:round}
+.dado .aresta{fill:none; stroke:var(--gold); stroke-width:1.5; opacity:.65}
+.dado-num{position:absolute; inset:0; display:grid; place-items:center; padding-top:10px; font-family:var(--f-mono); font-weight:700; font-size:1.8rem; color:var(--tray-ink); font-variant-numeric:tabular-nums}
+.dado.soma .dado-num{padding-top:0}
+.dado.critico svg{filter:drop-shadow(0 0 10px var(--tray-crit))}
+.dado.critico .dado-num{color:var(--tray-crit)}
+.dado.falha .dado-num{color:var(--tray-fail)}
+.dado.rolar svg{animation:rolar .45s cubic-bezier(.2,.8,.3,1)}
+.bandeja-texto{display:grid; gap:4px; min-width:0}
+.bandeja-rotulo{font-size:var(--t-xs); font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--tray-muted)}
+.bandeja-conta{font-family:var(--f-mono); font-size:var(--t-s); overflow-wrap:anywhere}
+.bandeja-resultado{font-family:var(--f-head); font-weight:700; font-size:var(--t-l)}
+.bandeja-resultado.acerto{color:var(--tray-hit)} .bandeja-resultado.erro{color:var(--tray-muted)}
+.bandeja-resultado.critico{color:var(--tray-crit)} .bandeja-resultado.falha{color:var(--tray-fail)}
+.bandeja-resultado.cura{color:var(--tray-heal)} .bandeja-resultado.dano{color:var(--tray-fail)}
+
+.painel{background:var(--sheet); border:1px solid var(--line); border-radius:var(--r); padding:16px; display:grid; gap:14px; align-content:start; min-width:0}
+.painel h2{font-family:var(--f-head); font-weight:700; font-size:var(--t-xl)}
+.painel h2:focus{outline:none}
+.painel h2:focus-visible{outline:3px solid var(--focus); outline-offset:4px}
+.recursos{display:flex; flex-wrap:wrap; gap:6px}
+.recursos span{font-size:var(--t-xs); font-weight:700; padding:3px 10px; border-radius:999px; border:1px solid var(--line)}
+.recursos .gasto{color:var(--muted); text-decoration:line-through}
+.grupo-acoes{display:grid; gap:8px}
+.grupo-acoes h3{font-family:var(--f-head); font-weight:700; font-size:var(--t-s); letter-spacing:.07em; text-transform:uppercase; color:var(--muted)}
+.acoes{display:grid; gap:8px; grid-template-columns:repeat(auto-fill, minmax(min(100%, 205px), 1fr))}
+.act{display:grid; gap:2px; align-content:start; text-align:left; min-height:56px; padding:10px 12px; border:1px solid var(--line); border-radius:var(--r); background:var(--sheet-2); cursor:pointer}
+.act:hover:not(:disabled){border-color:var(--brass)}
+.act-nome{font-weight:700}
+.act-det{font-size:var(--t-xs); color:var(--muted)}
+.custo{font-size:var(--t-xs); font-weight:700; color:var(--magic); white-space:nowrap}
+.placar{font-family:var(--f-mono); font-weight:700}
+.painel-fim{display:flex; flex-wrap:wrap; gap:8px}
+
+.diario{list-style:none; margin:0; padding:0 4px 0 0; display:grid; gap:8px; max-height:30rem; overflow:auto; align-content:start}
+@media (min-width:1180px){ .diario{max-height:calc(100vh - 220px)} }
+.diario li{background:var(--sheet); border:1px solid var(--line); border-radius:var(--r); padding:8px 10px; font-size:var(--t-s); line-height:1.45}
+.diario li.rodada-li{background:transparent; border:0; padding:2px 0; font-family:var(--f-head); font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--muted); font-size:var(--t-xs)}
+.diario li.critico{border-color:var(--brass)}
+.diario li.acerto strong{color:var(--heal)}
+.diario li.critico strong{color:var(--brass)}
+.diario li.erro strong,.diario li.falha strong{color:var(--muted)}
+.diario li.dano strong{color:var(--blood)}
+.diario li.cura strong{color:var(--heal)}
+.diario .n{font-weight:700}
+
+/* fim */
+.tabela-wrap{overflow-x:auto}
+table{border-collapse:collapse; width:100%; min-width:520px; font-size:var(--t-s)}
+th,td{padding:8px 10px; border-bottom:1px solid var(--line); text-align:left}
+th{font-size:var(--t-xs); letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
+td.num,th.num{text-align:right; font-family:var(--f-mono); font-variant-numeric:tabular-nums}
+.botoes{display:flex; flex-wrap:wrap; gap:10px}
+
+@keyframes rolar{0%{transform:rotate(-220deg) scale(.55)} 65%{transform:rotate(14deg) scale(1.06)} 100%{transform:none}}
+@keyframes golpe{0%,100%{transform:none} 25%{transform:translateX(-5px)} 50%{transform:translateX(4px)} 75%{transform:translateX(-2px)}}
+@keyframes brilho-dano{from{box-shadow:0 0 0 3px var(--blood)} to{box-shadow:0 0 0 3px transparent}}
+@keyframes brilho-cura{from{box-shadow:0 0 0 3px var(--heal)} to{box-shadow:0 0 0 3px transparent}}
+.flash-dano{animation:golpe .35s ease-out, brilho-dano .9s ease-out}
+.flash-cura{animation:brilho-cura .9s ease-out}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none!important; transition:none!important; scroll-behavior:auto!important}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="topo">
+    <span class="marca">Masmorra do D20</span>
+    <div class="ferramentas">
+      <label class="chave" for="opt-grande"><input type="checkbox" id="opt-grande"> Texto grande</label>
+      <button type="button" class="btn btn-quiet" id="btn-menu" hidden>Menu inicial</button>
+    </div>
+  </header>
+
+  <p id="anuncio" class="sr-only" aria-live="polite"></p>
+  <noscript><p>Este jogo precisa de JavaScript ligado no navegador.</p></noscript>
+
+  <main id="tela-inicio" class="wrap">
+    <div class="abertura">
+      <p class="kicker">RPG de turno com d20</p>
+      <h1 class="titulo">Masmorra do <span>D20</span></h1>
+      <p class="lede">Monte um grupo de até quatro heróis, role a iniciativa e suba a Torre Partida em cinco cenas. Cada herói pode ficar com uma pessoa ou com um grupo da turma.</p>
+    </div>
+    <div id="salvo"></div>
+    <section class="secao" aria-labelledby="t-elenco">
+      <h2 id="t-elenco" class="label">Seu grupo</h2>
+      <div id="elenco" class="elenco"></div>
+      <div class="partida">
+        <button type="button" class="btn" id="btn-add">Adicionar herói</button>
+        <p id="aviso-vigor" class="aviso"></p>
+      </div>
+    </section>
+    <fieldset class="dificuldade">
+      <legend class="label">Dificuldade</legend>
+      <div class="radios">
+        <label class="radio" for="dif-facil"><input type="radio" name="dif" id="dif-facil" value="facil"><span><b>Fácil</b><small>Monstros com menos PV e menos pontaria</small></span></label>
+        <label class="radio" for="dif-normal"><input type="radio" name="dif" id="dif-normal" value="normal" checked><span><b>Normal</b><small>Números de livro</small></span></label>
+        <label class="radio" for="dif-dificil"><input type="radio" name="dif" id="dif-dificil" value="dificil"><span><b>Difícil</b><small>Monstros mais resistentes e certeiros</small></span></label>
+      </div>
+    </fieldset>
+    <div class="partida">
+      <button type="button" class="btn btn-primary btn-grande" id="btn-comecar">Começar a aventura</button>
+    </div>
+    <details class="regras" id="regras-inicio">
+      <summary>Como funciona o d20</summary>
+      <div class="regras-corpo"></div>
+    </details>
+    <p class="creditos">Regras simplificadas a partir do System Reference Document 5.1, licenciado em Creative Commons Atribuição 4.0. Jogo sem vínculo com editoras.</p>
+  </main>
+
+  <main id="tela-historia" class="historia" hidden></main>
+
+  <main id="tela-combate" class="wrap" hidden>
+    <div class="cena-topo">
+      <div>
+        <p class="kicker" id="c-cena"></p>
+        <h1 class="titulo-cena" id="c-titulo"></h1>
+      </div>
+      <p class="rodada" id="c-rodada"></p>
+    </div>
+    <a class="pular btn" href="#painel" id="pular-acoes">Ir para as ações</a>
+    <section aria-labelledby="t-ini">
+      <h2 id="t-ini" class="sr-only">Ordem de iniciativa</h2>
+      <div class="ini-wrap" id="ini-wrap"><ol class="ini" id="iniciativa"></ol></div>
+    </section>
+    <div class="mesa">
+      <section class="coluna a-grupo" aria-labelledby="t-grupo">
+        <h2 id="t-grupo" class="label">Grupo</h2>
+        <div id="grupo" class="cartas"></div>
+      </section>
+      <section class="coluna a-inimigos" aria-labelledby="t-inimigos">
+        <h2 id="t-inimigos" class="label">Inimigos</h2>
+        <div id="inimigos" class="cartas"></div>
+      </section>
+      <div class="bandeja a-bandeja" aria-hidden="true">
+        <div class="dado" id="dado">
+          <svg class="forma-d20" viewBox="0 0 100 100" focusable="false"><polygon class="face" points="50,4 89.8,27 89.8,73 50,96 10.2,73 10.2,27"/><polygon class="tri" points="50,21 78,67 22,67"/><path class="aresta" d="M50,4 L50,21 M10.2,27 L50,21 L89.8,27 M10.2,27 L22,67 L10.2,73 M89.8,27 L78,67 L89.8,73 M22,67 L50,96 L78,67"/></svg>
+          <svg class="forma-soma" viewBox="0 0 100 100" focusable="false" hidden><rect class="face" x="9" y="9" width="82" height="82" rx="16"/></svg>
+          <span class="dado-num" id="dado-num">20</span>
+        </div>
+        <div class="bandeja-texto">
+          <p class="bandeja-rotulo" id="bandeja-rotulo">Bandeja de dados</p>
+          <p class="bandeja-conta" id="bandeja-conta"></p>
+          <p class="bandeja-resultado" id="bandeja-resultado"></p>
+        </div>
+      </div>
+      <section class="painel a-painel" id="painel" aria-labelledby="painel-titulo"></section>
+      <section class="coluna a-diario" aria-labelledby="t-diario">
+        <h2 id="t-diario" class="label">Diário de combate</h2>
+        <ol id="diario" class="diario" role="log" aria-live="polite"></ol>
+        <details class="regras">
+          <summary>Regras rápidas</summary>
+          <div class="regras-corpo"></div>
+        </details>
+      </section>
+    </div>
+  </main>
+
+  <main id="tela-fim" class="historia" hidden></main>
+</div>
+
+<script>
+'use strict';
+document.documentElement.lang = 'pt-BR';
+
+/* ---------- dados do jogo ---------- */
+const ATTRS = ['for','des','con','int','sab','car'];
+const SIGLA = {for:'FOR', des:'DES', con:'CON', int:'INT', sab:'SAB', car:'CAR'};
+const PADRAO = [15,14,13,12,10,8];
+
+const CLASSES = {
+  guerreiro:{nome:'Guerreiro', dado:10, prio:['for','con','des','sab','car','int'], resist:['for','con'],
+    ca:()=>16, arma:{nome:'Espada longa', n:1, s:8, tipo:'cortante', attr:'for'},
+    resumo:'Armadura pesada e golpes fortes. Recupera o fôlego no meio da luta.'},
+  mago:{nome:'Mago', dado:6, prio:['int','des','con','sab','car','for'], resist:['int','sab'],
+    ca:h=>10+mod(h.abil.des), arma:{nome:'Cajado', n:1, s:6, tipo:'contundente', attr:'for'}, magia:'int',
+    resumo:'Frágil, mas lança fogo em vários inimigos de uma vez.'},
+  ladino:{nome:'Ladino', dado:8, prio:['des','con','int','car','sab','for'], resist:['des','int'],
+    ca:h=>11+mod(h.abil.des), arma:{nome:'Rapieira', n:1, s:8, tipo:'perfurante', attr:'des'},
+    resumo:'Se esconde e acerta pontos fracos com o Ataque Furtivo.'},
+  clerigo:{nome:'Clérigo', dado:8, prio:['sab','con','for','car','des','int'], resist:['sab','car'],
+    ca:()=>18, arma:{nome:'Maça', n:1, s:6, tipo:'contundente', attr:'for'}, magia:'sab',
+    resumo:'Cura os aliados e queima mortos-vivos com luz sagrada.'},
+};
+const PODERES = {
+  guerreiro:{2:['Surto de Ação'], 3:['Crítico Aprimorado (19 ou 20)'], 5:['Ataque Extra']},
+  mago:{3:['Raio Ardente'], 5:['Bola de Fogo', 'Raio de Fogo com 2d10']},
+  ladino:{3:['Ataque Furtivo 2d6'], 5:['Ataque Furtivo 3d6', 'Esquiva Sobrenatural']},
+  clerigo:{3:['Bênção'], 5:['Palavra Curativa em Massa', 'Chama Sagrada com 2d8']},
+};
+
+const MONSTROS = {
+  goblin:{nome:'Goblin', plural:'goblins', ca:15, pv:7, des:2, con:0, ataque:{nome:'Cimitarra', bonus:4, n:1, s:6, b:2, tipo:'cortante'}},
+  lobo:{nome:'Lobo', plural:'lobos', ca:13, pv:11, des:2, con:1, ataque:{nome:'Mordida', bonus:4, n:2, s:4, b:2, tipo:'perfurante'}, matilha:true,
+    tracos:['Táticas de matilha: vantagem se outro lobo estiver de pé']},
+  esqueleto:{nome:'Esqueleto', plural:'esqueletos', ca:13, pv:13, des:2, con:2, ataque:{nome:'Espada curta', bonus:4, n:1, s:6, b:2, tipo:'perfurante'}, vuln:['contundente'],
+    tracos:['Vulnerável a dano contundente']},
+  zumbi:{nome:'Zumbi', plural:'zumbis', ca:8, pv:22, des:-2, con:3, ataque:{nome:'Pancada', bonus:3, n:1, s:6, b:1, tipo:'contundente'}, fortitude:true,
+    tracos:['Fortitude de morto-vivo: pode ficar de pé com 1 PV']},
+  orc:{nome:'Orc', plural:'orcs', ca:13, pv:15, des:1, con:3, ataque:{nome:'Machado grande', bonus:5, n:1, s:12, b:3, tipo:'cortante'}},
+  ogro:{nome:'Ogro', plural:'ogros', ca:11, pv:59, des:-1, con:3, ataque:{nome:'Clava grande', bonus:6, n:2, s:8, b:4, tipo:'contundente'}},
+  malvek:{nome:'Malvek, o Necromante', proprio:true, ca:14, pv:60, des:2, con:2, ataque:{nome:'Raio necrótico', bonus:6, n:2, s:8, b:2, tipo:'necrótico'}, chefe:true,
+    tracos:['Explosão sombria: recarrega com 5 ou 6 no d6', 'Ergue esqueletos quando fica sozinho']},
+};
+
+const INTRO = 'Há três noites, o sino de prata da capela de Pedra-Funda sumiu. Desde então os mortos do cemitério não descansam, e uma luz verde pisca no alto da Torre Partida, do outro lado da colina. Na Taverna do Javali Torto, o conselho da vila pede ajuda a vocês.';
+const CENAS = [
+  {titulo:'A estrada de Pedra-Funda', descanso:'curto',
+    texto:'Na estrada da colina, uma carroça tombada bloqueia a passagem. Risadas agudas vêm de trás dela: goblins saqueando a carga. Eles largam os sacos e puxam as cimitarras.',
+    inimigos:n=>[['goblin',[1,2,3,4][n-1]]]},
+  {titulo:'A Mata dos Sussurros', descanso:'curto', pocao:true,
+    texto:'A trilha entra na Mata dos Sussurros. Entre os troncos, olhos amarelos acompanham o grupo em silêncio. Então os lobos fecham o cerco.',
+    inimigos:n=>[['lobo',[1,2,3,4][n-1]]]},
+  {titulo:'A cripta da vila', descanso:'longo',
+    texto:'Para chegar à torre é preciso atravessar a velha cripta. As lápides estão abertas, e os ossos se juntam sozinhos, com espadas enferrujadas nas mãos.',
+    inimigos:n=>[['esqueleto',[2,2,3,4][n-1]], ['zumbi',[0,1,2,2][n-1]]]},
+  {titulo:'A ponte da torre', descanso:'curto', pocao:true,
+    texto:'Uma ponte de pedra leva ao portão da torre. Os guardas de Malvek bloqueiam a passagem e não parecem dispostos a conversar.',
+    inimigos:n=>n===1 ? [['orc',2]] : [['ogro',1,{pv:n===2?45:59}], ['orc',[0,0,2,3][n-1]]]},
+  {titulo:'O topo da Torre Partida',
+    texto:'No topo da torre, Malvek segura o sino roubado e ergue o cajado. A luz verde pulsa mais forte. “Chegaram bem a tempo de entrar para o meu exército”, ele diz.',
+    inimigos:n=>[['malvek',1,{pv:[45,60,90,110][n-1]}], ['esqueleto',[0,1,2,3][n-1]]]},
+];
+const TEXTO_CAPELA = 'Atrás da cripta há uma capela antiga que os mortos não conseguem atravessar. O grupo passa a noite ali.';
+const FIM_VITORIA = 'O cajado de Malvek se parte e a luz verde se apaga. O grupo desce a colina com o sino de prata nos braços, e naquela noite Pedra-Funda inteira dorme em paz.';
+const FIM_DERROTA = 'A escuridão toma conta do grupo. Mas toda mesa de RPG sabe que dá para rolar os dados de novo.';
+
+const DIFICULDADE = {facil:{nome:'Fácil', pv:.75, ataque:-2}, normal:{nome:'Normal', pv:1, ataque:0}, dificil:{nome:'Difícil', pv:1.4, ataque:2}};
+const NOMES = ['Brida','Iara','Tomé','Caio','Nara','Davi','Luma','Rui'];
+const ORDEM_CLASSES = ['guerreiro','mago','ladino','clerigo'];
+
+const REGRAS = `<dl>
+<dt>Atacar</dt><dd>Role um d20 e some o bônus de ataque. Se o total for igual ou maior que a Classe de Armadura (CA) do alvo, acertou, e você rola o dano.</dd>
+<dt>Crítico e falha</dt><dd>Tirar 20 no dado é acerto crítico: os dados de dano rolam em dobro. Tirar 1 é erro automático.</dd>
+<dt>Vantagem e desvantagem</dt><dd>Com vantagem, role dois d20 e fique com o maior. Com desvantagem, fique com o menor. Se tiver as duas, elas se anulam.</dd>
+<dt>Modificador</dt><dd>Cada atributo vira um modificador: valor menos 10, dividido por 2, arredondado para baixo. Força 17 dá +3. Força 8 dá -1.</dd>
+<dt>Teste de resistência</dt><dd>Algumas magias não rolam ataque. O alvo rola d20 + modificador e precisa igualar ou passar a Classe de Dificuldade (CD) de quem lançou.</dd>
+<dt>Sua vez</dt><dd>Você tem uma ação (atacar, lançar magia, esquivar, usar poção) e uma ação bônus, se a sua classe tiver alguma.</dd>
+<dt>Pontos de vida</dt><dd>Com 0 PV, o herói cai. Na vez dele, rola um teste contra a morte: 10 ou mais é sucesso. Três sucessos estabilizam, três falhas matam. Qualquer cura levanta o herói.</dd>
+<dt>Espaços de magia</dt><dd>Magos e clérigos gastam espaços nas magias fortes. Truques, como Raio de Fogo e Chama Sagrada, são de graça.</dd>
+<dt>Iniciativa</dt><dd>No começo do combate, todos rolam d20 + Destreza. Quem tirar mais age primeiro.</dd>
+</dl>`;
+
+/* ---------- utilidades ---------- */
+const $ = (s, el=document) => el.querySelector(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const semTags = s => String(s).replace(/<[^>]+>/g, '');
+const soma = a => a.reduce((x,y)=>x+y, 0);
+const mod = v => Math.floor((v-10)/2);
+const sinal = n => (n>=0 ? '+' : '-') + Math.abs(n);
+const opera = n => (n>=0 ? ' + ' : ' - ') + Math.abs(n);
+const expr = (q,f,b) => `${q}d${f}${b ? sinal(b) : ''}`;
+const uid = () => Math.random().toString(36).slice(2,10);
+function d(n){ return 1 + Math.floor(Math.random()*n); }
+function rolar(q, f){ const a=[]; for (let i=0;i<q;i++) a.push(d(f)); return a; }
+function reduzMovimento(){ try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch { return false; } }
+function anunciar(t){ const el=$('#anuncio'); el.textContent=''; setTimeout(()=>{ el.textContent=t; }, 30); }
+
+let G = null;
+let ui = {tela:'inicio', modo:null, flash:[]};
+let setup = {elenco: ORDEM_CLASSES.map((c,i)=>({nome:NOMES[i], cls:c, valores:[...PADRAO], rolagens:null})), dif:'normal'};
+let SPEED = 1;
+let SEQ = 0;
+const SAVE = 'masmorra-d20:jogo';
+
+/* ---------- heróis ---------- */
+function proficiencia(h){ return h.nivel>=5 ? 3 : 2; }
+function vigorPara(n){ return n===1 ? 2 : n===2 ? 1.5 : 1; }
+function pvMax(h, vig){ const c=CLASSES[h.cls], m=mod(h.abil.con); const base=c.dado+m+(h.nivel-1)*(c.dado/2+1+m); return Math.max(1, Math.round(base*vig)); }
+function caHeroi(h){ return CLASSES[h.cls].ca(h); }
+function arma(h){ const w=CLASSES[h.cls].arma, m=mod(h.abil[w.attr]); return {...w, bonus:proficiencia(h)+m, b:m}; }
+function modMagia(h){ return mod(h.abil[CLASSES[h.cls].magia]); }
+function ataqueMagia(h){ return proficiencia(h)+modMagia(h); }
+function cdMagia(h){ return 8+proficiencia(h)+modMagia(h); }
+function resistencia(h, a){ return mod(h.abil[a]) + (CLASSES[h.cls].resist.includes(a) ? proficiencia(h) : 0); }
+function espacosMax(h){ return CLASSES[h.cls].magia ? h.nivel+1 : 0; }
+function furtivoDados(h){ return h.nivel>=5 ? 3 : h.nivel>=3 ? 2 : 1; }
+function criticoMin(h){ return h.cls==='guerreiro' && h.nivel>=3 ? 19 : 20; }
+function furtividade(h){ return mod(h.abil.des)+proficiencia(h); }
+
+function distribuir(valores, cls){
+  const ord=[...valores].sort((a,b)=>b-a), p=CLASSES[cls].prio, abil={};
+  p.forEach((a,i)=>{ abil[a]=ord[i]; });
+  abil[p[0]]=Math.min(20, abil[p[0]]+2);
+  abil[p[1]]=Math.min(20, abil[p[1]]+1);
+  return abil;
+}
+function rolarAtributos(){
+  return Array.from({length:6}, ()=>{ const dados=rolar(4,6); return {dados, total:soma(dados)-Math.min(...dados)}; }).sort((a,b)=>b.total-a.total);
+}
+function criarHeroi(r, i, vig){
+  const h={id:'h'+i, tipo:'heroi', nome:(r.nome||'').trim() || `Herói ${i+1}`, cls:r.cls, abil:distribuir(r.valores, r.cls), nivel:1,
+    pv:0, pvMax:0, espacos:0, usado:{folego:false, surto:false}, morte:{s:0, f:0}, estavel:false, morto:false,
+    esquivando:false, escondido:false, abencoado:false, reacao:false,
+    st:{dano:0, criticos:0, cura:0, abates:0, uns:0}};
+  h.pvMax=pvMax(h, vig); h.pv=h.pvMax; h.espacos=espacosMax(h);
+  return h;
+}
+function subirNivel(h){
+  const antes=h.pvMax, notas=[];
+  h.nivel++;
+  if (h.nivel===4){ const a=CLASSES[h.cls].prio[0]; h.abil[a]=Math.min(20, h.abil[a]+2); notas.push(`+2 em ${SIGLA[a]}`); }
+  if (h.nivel===5) notas.push('bônus de proficiência +3');
+  h.pvMax=pvMax(h, G.vigor);
+  const ganho=h.pvMax-antes;
+  if (!h.morto) h.pv=Math.min(h.pvMax, h.pv+ganho);
+  if (espacosMax(h)) { h.espacos=Math.min(espacosMax(h), h.espacos+1); notas.push(`${espacosMax(h)} espaços de magia`); }
+  notas.push(...(PODERES[h.cls][h.nivel]||[]));
+  return {nome:h.nome, nivel:h.nivel, ganho, notas};
+}
+function descansoCurto(h){
+  if (h.morto) return `${esc(h.nome)} está morto. Só uma capela poderia trazê-lo de volta.`;
+  h.usado.folego=false; h.usado.surto=false;
+  const c=CLASSES[h.cls], m=mod(h.abil.con), r=d(c.dado), v=Math.max(1, Math.round((r+m)*G.vigor));
+  const antes=h.pv; h.pv=Math.min(h.pvMax, h.pv+v);
+  return `${esc(h.nome)} gasta um Dado de Vida: 1d${c.dado}${sinal(m)} = ${r}${opera(m)}${G.vigor>1 ? `, com vigor ×${G.vigor}` : ''}, recupera ${h.pv-antes} PV (${h.pv}/${h.pvMax}).`;
+}
+function descansoLongo(h){
+  const voltou=h.morto;
+  h.morto=false; h.estavel=false; h.morte={s:0,f:0};
+  h.pv=h.pvMax; h.espacos=espacosMax(h); h.usado.folego=false; h.usado.surto=false;
+  return voltou ? `${esc(h.nome)} volta à vida diante do altar, com todos os PV.` : `${esc(h.nome)} acorda com ${h.pvMax} PV${espacosMax(h) ? ' e todos os espaços de magia' : ''}.`;
+}
+
+/* ---------- dados rolados ---------- */
+function rolarD20(modo, bonus, bencao){
+  const a=d(20), b=modo ? d(20) : null;
+  const nat = modo===1 ? Math.max(a,b) : modo===-1 ? Math.min(a,b) : a;
+  const bn = bencao ? d(4) : 0;
+  return {a, b, modo, nat, bonus, bencao:bn, total:nat+bonus+bn};
+}
+function textoD20(r){
+  let s='';
+  if (r.modo===1) s+=`vantagem, ${r.a} e ${r.b}, fica o maior. `;
+  if (r.modo===-1) s+=`desvantagem, ${r.a} e ${r.b}, fica o menor. `;
+  s+=`d20 <span class="n">${r.nat}</span>`;
+  if (r.bonus) s+=opera(r.bonus);
+  if (r.bencao) s+=` + bênção ${r.bencao}`;
+  s+=` = <span class="n">${r.total}</span>`;
+  return s;
+}
+function rolarDano(q, f, b, critico){
+  const qq=critico ? q*2 : q, dados=rolar(qq, f), total=Math.max(1, soma(dados)+b);
+  const conta = dados.length===1 && !b ? `${dados[0]}` : `${dados.join(' + ')}${b ? opera(b) : ''} = ${total}`;
+  return {dados, total, texto:`${expr(qq,f,b)}: ${conta}`};
+}
+
+/* ---------- combate: consultas ---------- */
+function C_(){ return G && G.combate; }
+function porId(id){ return G.herois.find(h=>h.id===id) || (G.combate ? G.combate.inimigos.find(e=>e.id===id) : null); }
+function atual(){ const C=C_(); return C ? porId(C.ordem[C.vez]) : null; }
+function heroisDePe(){ return G.herois.filter(h=>!h.morto && h.pv>0); }
+function inimigosVivos(){ return G.combate.inimigos.filter(e=>e.pv>0); }
+function menorPv(lista){ return lista.length ? lista.reduce((a,b)=>b.pv<a.pv ? b : a) : null; }
+function outroAliadoDePe(h){ return heroisDePe().some(x=>x!==h); }
+function inicial(c){ const m=/ ([A-Z])$/.exec(c.nome); return m ? m[1] : (c.nome.trim()[0]||'?').toUpperCase(); }
+
+function registrar(html, cls=''){
+  const C=C_(); if (!C) return;
+  C.log.push({html, cls});
+  if (C.log.length>150) C.log.shift();
+  const li=document.createElement('li'); li.className=cls; li.innerHTML=html;
+  const ol=$('#diario'); ol.prepend(li);
+  while (ol.children.length>150) ol.lastChild.remove();
+}
+function renderDiario(){
+  const ol=$('#diario'); ol.innerHTML='';
+  for (const x of C_().log){ const li=document.createElement('li'); li.className=x.cls; li.innerHTML=x.html; ol.prepend(li); }
+}
+function depois(ms, fn){
+  const gid=G.gid, tid=G.combate && G.combate.turnoId;
+  setTimeout(()=>{ if (!G || G.gid!==gid || G.fase!=='combate' || !G.combate || G.combate.turnoId!==tid) return; fn(); }, ms*SPEED);
+}
+
+/* ---------- combate: fluxo ---------- */
+function iniciarCombate(){
+  const cena=CENAS[G.cena], n=G.herois.length, dif=DIFICULDADE[G.dif];
+  G.foto=JSON.stringify({herois:G.herois, pocoes:G.pocoes});
+  const C=G.combate={rodada:1, vez:0, ordem:[], ini:{}, inimigos:[], t:null, turnoId:0, ocupado:false, log:[], prox:0, dado:null};
+  for (const [tipo, qtd, extra] of cena.inimigos(n)) for (let i=0;i<qtd;i++) C.inimigos.push(criarInimigo(tipo, extra, dif));
+  nomearInimigos(C.inimigos);
+  const todos=[...G.herois.filter(h=>!h.morto), ...C.inimigos];
+  const rolagens=todos.map(c=>{ const b=c.tipo==='heroi' ? mod(c.abil.des) : c.des, r=d(20); return {id:c.id, r, b, total:r+b, x:Math.random()}; });
+  rolagens.sort((p,q)=>q.total-p.total || q.b-p.b || q.x-p.x);
+  C.ordem=rolagens.map(x=>x.id);
+  rolagens.forEach(x=>{ C.ini[x.id]=x.total; });
+  G.fase='combate'; ui.modo=null; ui.flash=[];
+  mostrarTela('combate');
+  renderDiario();
+  registrar(`<strong>Iniciativa.</strong> ${rolagens.map(x=>`${esc(porId(x.id).nome)} <span class="n">${x.total}</span>`).join(', ')}.`, 'info');
+  const pri=rolagens[0];
+  mostrarDado({rotulo:'Iniciativa', valor:pri.r, d20:true, conta:`${porId(pri.id).nome}: d20 ${pri.r}${opera(pri.b)} = ${pri.total}`, resultado:`${porId(pri.id).nome} age primeiro`, classe:'acerto'});
+  comecarTurno();
+}
+function criarInimigo(tipo, extra, dif){
+  const m=MONSTROS[tipo], C=G.combate, pv=Math.max(1, Math.round(((extra && extra.pv) || m.pv)*dif.pv));
+  return {id:'e'+(C.prox++), tipo:'inimigo', especie:tipo, nome:m.nome, pv, pvMax:pv, ca:m.ca, des:m.des, bonusDif:dif.ataque, pronto:true, ergueu:0};
+}
+function nomearInimigos(lista){
+  const cont={}; lista.forEach(e=>{ cont[e.especie]=(cont[e.especie]||0)+1; });
+  const vistos={};
+  lista.forEach(e=>{ if (cont[e.especie]>1){ vistos[e.especie]=(vistos[e.especie]||0)+1; e.nome=`${MONSTROS[e.especie].nome} ${String.fromCharCode(64+vistos[e.especie])}`; } });
+}
+function comecarTurno(){
+  const C=G.combate; C.turnoId=++SEQ; C.ocupado=false; ui.modo=null;
+  C.t={acoes:1, bonus:1, ataques:0, furtivo:false};
+  const a=atual();
+  if (a.tipo==='inimigo'){
+    if (a.pv<=0) return proximoTurno();
+    salvar(); renderCombate(); turnoInimigo(a); return;
+  }
+  if (a.morto || (a.pv<=0 && a.estavel)) return proximoTurno();
+  a.esquivando=false; a.reacao=false;
+  salvar(); renderCombate(); focarPainel();
+  anunciar(a.pv>0 ? `Vez de ${a.nome}.` : `${a.nome} está caído. Teste contra a morte.`);
+}
+function proximoTurno(){
+  if (verificarFim()) return;
+  const C=G.combate; C.vez++;
+  if (C.vez>=C.ordem.length){ C.vez=0; C.rodada++; registrar(`Rodada ${C.rodada}`, 'rodada-li'); }
+  comecarTurno();
+}
+function verificarFim(){
+  if (G.fase!=='combate') return true;
+  if (!inimigosVivos().length){ encerrarCombate(true); return true; }
+  if (!heroisDePe().length){ encerrarCombate(false); return true; }
+  return false;
+}
+function encerrarVez(){ const C=C_(); if (!C || C.ocupado) return; const a=atual(); if (!a || a.tipo!=='heroi') return; ui.modo=null; proximoTurno(); }
+
+function acoesDe(h){
+  const C=G.combate, t=C.t, L=h.nivel, lista=[], add=o=>lista.push(o);
+  const vivos=inimigosVivos().length, feridos=G.herois.some(x=>!x.morto && x.pv<x.pvMax);
+  const w=arma(h);
+  add({id:'atacar', grupo:'acao', nome:w.nome, alvo:'inimigo',
+    det:`${sinal(w.bonus)} para acertar · ${expr(w.n,w.s,w.b)} ${w.tipo}${h.cls==='guerreiro'&&L>=5 ? ' · 2 ataques' : ''}${h.cls==='ladino' ? ` · furtivo +${furtivoDados(h)}d6` : ''}`});
+  if (h.cls==='mago'){
+    const cd=cdMagia(h);
+    add({id:'raio_fogo', grupo:'acao', nome:'Raio de Fogo', alvo:'inimigo', det:`truque · ${sinal(ataqueMagia(h))} para acertar · ${L>=5?2:1}d10 de fogo`});
+    add({id:'misseis', grupo:'acao', nome:'Mísseis Mágicos', alvo:'inimigo', custo:1, det:'3 dardos de 1d4+1 que sempre acertam'});
+    add({id:'maos', grupo:'acao', nome:'Mãos Flamejantes', alvo:null, custo:1, det:`todos os inimigos · 3d6 de fogo · Destreza CD ${cd} sofre metade`});
+    if (L>=3) add({id:'ardente', grupo:'acao', nome:'Raio Ardente', alvo:'inimigo', custo:1, det:`3 raios de 2d6 de fogo · ${sinal(ataqueMagia(h))} cada`});
+    if (L>=5) add({id:'bola', grupo:'acao', nome:'Bola de Fogo', alvo:null, custo:2, det:`todos os inimigos · 8d6 de fogo · Destreza CD ${cd} sofre metade`});
+  }
+  if (h.cls==='clerigo'){
+    const cd=cdMagia(h), m=modMagia(h);
+    add({id:'chama', grupo:'acao', nome:'Chama Sagrada', alvo:'inimigo', det:`truque · ${L>=5?2:1}d8 radiante · Destreza CD ${cd} evita`});
+    add({id:'curar', grupo:'acao', nome:'Curar Ferimentos', alvo:'aliado', custo:1, ferido:true, det:`2d8${sinal(m)} PV em um aliado`});
+    if (L>=3) add({id:'bencao', grupo:'acao', nome:'Bênção', alvo:null, custo:1, det:'o grupo soma 1d4 em ataques e resistências até o fim do combate'});
+    add({id:'palavra', grupo:'bonus', nome:'Palavra Curativa', alvo:'aliado', custo:1, ferido:true, det:`2d4${sinal(m)} PV em um aliado`});
+    if (L>=5) add({id:'massa', grupo:'bonus', nome:'Palavra Curativa em Massa', alvo:null, custo:2, ferido:true, det:`2d4${sinal(m)} PV para todo o grupo`});
+  }
+  add({id:'esquivar', grupo:'acao', nome:'Esquivar', alvo:null, det:'ataques contra você com desvantagem até a sua próxima vez'});
+  add({id:'pocao', grupo:'acao', nome:'Poção de cura', alvo:'aliado', ferido:true, pocao:true, det:`2d4+2 PV · ${G.pocoes} no grupo`});
+  if (h.cls==='guerreiro') add({id:'folego', grupo:'bonus', nome:'Retomar o Fôlego', alvo:null, uso:'folego', det:`cura 1d10+${L} · uma vez por descanso`});
+  if (h.cls==='guerreiro' && L>=2) add({id:'surto', grupo:'livre', nome:'Surto de Ação', alvo:null, uso:'surto', det:'ganha mais uma ação nesta vez · uma vez por descanso'});
+  if (h.cls==='ladino') add({id:'esconder', grupo:'bonus', nome:'Esconder-se', alvo:null, det:`Furtividade d20${sinal(furtividade(h))} contra CD 12 · vantagem no próximo ataque`});
+  for (const x of lista){
+    let m='';
+    if (x.grupo==='acao' && t.acoes<=0) m='ação já usada';
+    else if (x.grupo==='bonus' && t.bonus<=0) m='ação bônus já usada';
+    else if (x.custo && h.espacos<x.custo) m='sem espaços de magia';
+    else if (x.pocao && G.pocoes<=0) m='acabaram as poções';
+    else if (x.uso && h.usado[x.uso]) m='já usado neste descanso';
+    else if (x.id==='folego' && h.pv>=h.pvMax) m='seus PV estão cheios';
+    else if (x.ferido && !feridos) m='ninguém está ferido';
+    else if (x.id==='esconder' && h.escondido) m='você já está escondido';
+    else if (x.id==='bencao' && G.herois.every(y=>y.morto || y.abencoado)) m='o grupo já está abençoado';
+    else if (x.alvo==='inimigo' && !vivos) m='nenhum inimigo de pé';
+    x.ok=!m; x.motivo=m;
+  }
+  return lista;
+}
+
+function escolherAcao(id){
+  const C=C_(), h=atual(); if (!C || C.ocupado || !h || h.tipo!=='heroi') return;
+  const x=acoesDe(h).find(a=>a.id===id); if (!x || !x.ok) return;
+  if (x.alvo){ ui.modo={id, alvo:x.alvo}; renderCombate(); focarPainel(); return; }
+  executar(id);
+}
+
+function executar(id, alvoId){
+  const C=C_(); if (!C || C.ocupado) return;
+  const h=atual(); if (!h || h.tipo!=='heroi' || h.pv<=0) return;
+  const x=acoesDe(h).find(a=>a.id===id); if (!x) return;
+  const seguindo = id==='atacar' && C.t.ataques>0;
+  if (!x.ok && !seguindo) return;
+  const alvo = alvoId ? porId(alvoId) : null;
+  if (x.alvo==='inimigo' && (!alvo || alvo.tipo!=='inimigo' || alvo.pv<=0)) return;
+  if (x.alvo==='aliado' && (!alvo || alvo.tipo!=='heroi' || alvo.morto)) return;
+  ui.modo=null;
+  if (x.custo) h.espacos-=x.custo;
+  const L=h.nivel, N=esc(h.nome);
+  switch (id){
+    case 'atacar': {
+      if (C.t.ataques<=0){ C.t.acoes--; C.t.ataques=(h.cls==='guerreiro' && L>=5) ? 2 : 1; }
+      C.t.ataques--;
+      const w=arma(h);
+      ataqueDeHeroi(h, alvo, {frase:`ataca <b>${esc(alvo.nome)}</b> com ${w.nome}`, bonus:w.bonus, n:w.n, f:w.s, b:w.b, tipo:w.tipo, critMin:criticoMin(h), furtivo:h.cls==='ladino'});
+      if (C.t.ataques>0 && inimigosVivos().length) ui.modo={id:'atacar', alvo:'inimigo', extra:true};
+      else C.t.ataques=0;
+      break;
+    }
+    case 'raio_fogo':
+      C.t.acoes--;
+      ataqueDeHeroi(h, alvo, {frase:`lança Raio de Fogo contra <b>${esc(alvo.nome)}</b>`, bonus:ataqueMagia(h), n:L>=5?2:1, f:10, b:0, tipo:'de fogo'});
+      break;
+    case 'misseis': C.t.acoes--; misseis(h, alvo); break;
+    case 'maos': C.t.acoes--; area(h, 'Mãos Flamejantes', 3, 6); break;
+    case 'bola': C.t.acoes--; area(h, 'Bola de Fogo', 8, 6); break;
+    case 'ardente': {
+      C.t.acoes--;
+      let t=alvo;
+      for (let i=1;i<=3;i++){
+        if (!t || t.pv<=0) t=menorPv(inimigosVivos());
+        if (!t) break;
+        ataqueDeHeroi(h, t, {frase:`dispara o raio ${i} de 3 contra <b>${esc(t.nome)}</b>`, bonus:ataqueMagia(h), n:2, f:6, b:0, tipo:'de fogo'});
+      }
+      break;
+    }
+    case 'chama': C.t.acoes--; chama(h, alvo); break;
+    case 'curar': {
+      C.t.acoes--;
+      const m=modMagia(h), dn=rolarDano(2,8,m,false);
+      registrar(`<b>${N}</b> toca <b>${esc(alvo.nome)}</b> e lança Curar Ferimentos. Rola ${dn.texto}. ${curarHeroi(alvo, dn.total, h)}`, 'cura');
+      mostrarDado({rotulo:'Curar Ferimentos', valor:dn.total, d20:false, conta:dn.texto, resultado:`${alvo.nome} recupera PV`, classe:'cura'});
+      break;
+    }
+    case 'palavra': {
+      C.t.bonus--;
+      const m=modMagia(h), dn=rolarDano(2,4,m,false);
+      registrar(`<b>${N}</b> grita uma Palavra Curativa para <b>${esc(alvo.nome)}</b>. Rola ${dn.texto}. ${curarHeroi(alvo, dn.total, h)}`, 'cura');
+      mostrarDado({rotulo:'Palavra Curativa', valor:dn.total, d20:false, conta:dn.texto, resultado:`${alvo.nome} recupera PV`, classe:'cura'});
+      break;
+    }
+    case 'massa': {
+      C.t.bonus--;
+      const m=modMagia(h), dn=rolarDano(2,4,m,false);
+      const partes=G.herois.filter(y=>!y.morto).map(y=>curarHeroi(y, dn.total, h)).join(' ');
+      registrar(`<b>${N}</b> lança Palavra Curativa em Massa. Rola ${dn.texto}. ${partes}`, 'cura');
+      mostrarDado({rotulo:'Palavra Curativa em Massa', valor:dn.total, d20:false, conta:dn.texto, resultado:'O grupo inteiro recupera PV', classe:'cura'});
+      break;
+    }
+    case 'bencao': {
+      C.t.acoes--;
+      G.herois.forEach(y=>{ if (!y.morto) y.abencoado=true; });
+      registrar(`<b>${N}</b> lança Bênção. <strong>Até o fim do combate, o grupo soma 1d4 nas jogadas de ataque e nos testes de resistência.</strong>`, 'cura');
+      mostrarDado({rotulo:'Bênção', valor:'d4', d20:false, conta:'+1d4 em ataques e resistências', resultado:'O grupo está abençoado', classe:'cura'});
+      break;
+    }
+    case 'esquivar':
+      C.t.acoes--; h.esquivando=true;
+      registrar(`<b>${N}</b> se concentra em Esquivar. <strong>Ataques contra ${N} têm desvantagem até a próxima vez.</strong>`, 'info');
+      mostrarDado({rotulo:'Esquivar', valor:'–', d20:false, conta:'Inimigos rolam 2d20 e ficam com o menor', resultado:`${h.nome} está esquivando`, classe:'acerto'});
+      break;
+    case 'pocao': {
+      C.t.acoes--; G.pocoes--;
+      const dn=rolarDano(2,4,2,false);
+      const quem = alvo===h ? `<b>${N}</b> bebe uma poção de cura` : `<b>${N}</b> dá uma poção de cura para <b>${esc(alvo.nome)}</b>`;
+      registrar(`${quem}. Rola ${dn.texto}. ${curarHeroi(alvo, dn.total, h)} Restam ${G.pocoes} poções.`, 'cura');
+      mostrarDado({rotulo:'Poção de cura', valor:dn.total, d20:false, conta:dn.texto, resultado:`${alvo.nome} recupera PV`, classe:'cura'});
+      break;
+    }
+    case 'folego': {
+      C.t.bonus--; h.usado.folego=true;
+      const dn=rolarDano(1,10,L,false);
+      registrar(`<b>${N}</b> respira fundo e Retoma o Fôlego. Rola ${dn.texto}. ${curarHeroi(h, dn.total, h)}`, 'cura');
+      mostrarDado({rotulo:'Retomar o Fôlego', valor:dn.total, d20:false, conta:dn.texto, resultado:`${h.nome} recupera PV`, classe:'cura'});
+      break;
+    }
+    case 'surto':
+      h.usado.surto=true; C.t.acoes++;
+      registrar(`<b>${N}</b> usa o Surto de Ação. <strong>Ganha mais uma ação nesta vez.</strong>`, 'info');
+      break;
+    case 'esconder': {
+      C.t.bonus--;
+      const r=rolarD20(0, furtividade(h), false), ok=r.total>=12;
+      if (ok) h.escondido=true;
+      registrar(`<b>${N}</b> tenta se esconder. Teste de Furtividade: ${textoD20(r)} contra CD 12. <strong>${ok ? 'Escondido: o próximo ataque tem vantagem.' : 'Os inimigos perceberam.'}</strong>`, ok ? 'acerto' : 'erro');
+      mostrarDado({rotulo:'Teste de Furtividade', valor:r.nat, d20:true, conta:`${semTags(textoD20(r))} contra CD 12`, resultado:ok ? 'Escondido' : 'Foi visto', classe:ok ? 'acerto' : 'erro'});
+      break;
+    }
+  }
+  depoisDaAcao();
+}
+
+function depoisDaAcao(){
+  const C=G.combate, h=atual();
+  if (!inimigosVivos().length || !heroisDePe().length){
+    C.ocupado=true; renderCombate();
+    depois(1100, ()=>{ G.combate.ocupado=false; verificarFim(); });
+    return;
+  }
+  if (ui.modo){ renderCombate(); salvar(); focarPainel(); return; }
+  if (h.pv<=0 || !acoesDe(h).some(x=>x.ok)){
+    C.ocupado=true; renderCombate();
+    depois(900, ()=>{ G.combate.ocupado=false; proximoTurno(); });
+    return;
+  }
+  renderCombate(); salvar(); focarPainel();
+}
+
+function ataqueDeHeroi(h, e, o){
+  const C=G.combate, vant=h.escondido;
+  const r=rolarD20(vant ? 1 : 0, o.bonus, h.abencoado);
+  h.escondido=false;
+  const crit=r.nat>=(o.critMin||20), falha=r.nat===1, acerto=!falha && (crit || r.total>=e.ca);
+  let msg=`<b>${esc(h.nome)}</b> ${o.frase}${vant ? ', saindo do esconderijo com vantagem' : ''}: ${textoD20(r)} contra CA ${e.ca}. `;
+  let resultado, classe;
+  if (falha){ h.st.uns++; msg+='<strong>1 natural: erro automático.</strong>'; resultado='1 natural: erro automático'; classe='falha'; }
+  else if (!acerto){ msg+='<strong>Errou.</strong>'; resultado=`Errou: ${r.total} não chega à CA ${e.ca}`; classe='erro'; }
+  else {
+    if (crit){ h.st.criticos++; msg+='<strong>Acerto crítico!</strong> Os dados de dano rolam em dobro. '; } else msg+='<strong>Acertou.</strong> ';
+    const dn=rolarDano(o.n, o.f, o.b, crit); let total=dn.total;
+    msg+=`Rola ${dn.texto}`;
+    if (o.furtivo && !C.t.furtivo && (r.modo===1 || outroAliadoDePe(h))){
+      const q=furtivoDados(h)*(crit ? 2 : 1), fd=rolar(q,6);
+      total+=soma(fd); C.t.furtivo=true;
+      msg+=`, mais Ataque Furtivo ${q}d6: ${fd.join(' + ')}, total ${total}`;
+    }
+    msg+=` de dano ${o.tipo}.`;
+    const extra=causarDanoInimigo(e, total, o.tipo, h, crit); if (extra) msg+=' '+extra;
+    resultado=`${crit ? 'Crítico' : 'Acertou'}: ${total} de dano ${o.tipo}`; classe=crit ? 'critico' : 'acerto';
+  }
+  registrar(msg, classe);
+  mostrarDado({rotulo:`${h.nome} contra ${e.nome}`, valor:r.nat, d20:true, conta:`${semTags(textoD20(r))} contra CA ${e.ca}`, resultado, classe});
+}
+function misseis(h, alvo){
+  let msg=`<b>${esc(h.nome)}</b> lança Mísseis Mágicos: três dardos que sempre acertam.`;
+  const valores=[]; let t=alvo;
+  for (let i=1;i<=3;i++){
+    if (!t || t.pv<=0) t=menorPv(inimigosVivos());
+    if (!t) break;
+    const r=d(4), v=r+1; valores.push(v);
+    msg+=` Dardo ${i} em ${esc(t.nome)}: 1d4+1 = ${r} + 1 = ${v}.`;
+    const extra=causarDanoInimigo(t, v, 'de energia', h, false); if (extra) msg+=' '+extra;
+  }
+  registrar(msg, 'acerto');
+  mostrarDado({rotulo:'Mísseis Mágicos', valor:soma(valores), d20:false, conta:`${valores.length} × (1d4+1): ${valores.join(' + ')} = ${soma(valores)}`, resultado:'Os dardos sempre acertam', classe:'acerto'});
+}
+function area(h, nome, q, f){
+  const cd=cdMagia(h), dados=rolar(q,f), total=soma(dados);
+  let msg=`<b>${esc(h.nome)}</b> lança ${nome}: ${q}d${f} = ${dados.join(' + ')} = <span class="n">${total}</span> de dano de fogo. Cada inimigo faz um teste de resistência de Destreza, CD ${cd}.`;
+  for (const e of inimigosVivos()){
+    const r=d(20), tot=r+e.des, passou=tot>=cd, v=passou ? Math.floor(total/2) : total;
+    msg+=` ${esc(e.nome)}: d20 ${r}${opera(e.des)} = ${tot}, ${passou ? `passou e sofre metade, ${v}` : `falhou e sofre ${v}`}.`;
+    if (v>0){ const extra=causarDanoInimigo(e, v, 'de fogo', h, false); if (extra) msg+=' '+extra; }
+  }
+  registrar(msg, 'acerto');
+  mostrarDado({rotulo:nome, valor:total, d20:false, conta:`${q}d${f}: ${dados.join(' + ')} = ${total}`, resultado:`Destreza CD ${cd}: quem passa sofre metade`, classe:'acerto'});
+}
+function chama(h, e){
+  const cd=cdMagia(h), r=d(20), tot=r+e.des, q=h.nivel>=5 ? 2 : 1;
+  let msg=`<b>${esc(h.nome)}</b> lança Chama Sagrada sobre <b>${esc(e.nome)}</b>. Teste de Destreza: d20 ${r}${opera(e.des)} = ${tot} contra CD ${cd}.`;
+  const conta=`${e.nome}: d20 ${r}${opera(e.des)} = ${tot} contra CD ${cd}`;
+  if (tot>=cd){
+    registrar(msg+' <strong>Passou: nenhum dano.</strong>', 'erro');
+    mostrarDado({rotulo:'Chama Sagrada', valor:r, d20:true, conta, resultado:'Passou no teste: sem dano', classe:'erro'});
+    return;
+  }
+  const dn=rolarDano(q,8,0,false);
+  msg+=` <strong>Falhou.</strong> Rola ${dn.texto} de dano radiante.`;
+  const extra=causarDanoInimigo(e, dn.total, 'radiante', h, false); if (extra) msg+=' '+extra;
+  registrar(msg, 'acerto');
+  mostrarDado({rotulo:'Chama Sagrada', valor:r, d20:true, conta, resultado:`Falhou: ${dn.total} de dano radiante`, classe:'acerto'});
+}
+function causarDanoInimigo(e, valor, tipo, fonte, crit){
+  const m=MONSTROS[e.especie]; let v=valor, msg='';
+  if (m.vuln && m.vuln.includes(tipo)){ v*=2; msg+=`${esc(e.nome)} é vulnerável a dano ${tipo}: o dano dobra para ${v}. `; }
+  const antes=e.pv; e.pv=Math.max(0, e.pv-v);
+  if (e.pv===0 && m.fortitude && tipo!=='radiante' && !crit){
+    const cd=5+v, r=d(20), tot=r+m.con;
+    if (tot>=cd){ e.pv=1; msg+=`Fortitude de morto-vivo: d20 ${r}${opera(m.con)} = ${tot} contra CD ${cd}. ${esc(e.nome)} continua de pé com 1 PV. `; }
+    else msg+=`Fortitude de morto-vivo falhou: ${tot} contra CD ${cd}. `;
+  }
+  fonte.st.dano+=antes-e.pv;
+  if (e.pv===0){ fonte.st.abates++; msg+=`<strong>${esc(e.nome)} foi derrotado.</strong>`; }
+  else ui.flash.push({id:e.id, tipo:'dano'});
+  return msg.trim();
+}
+function curarHeroi(a, v, fonte){
+  if (a.morto) return '';
+  const caido=a.pv<=0, antes=a.pv;
+  a.pv=Math.min(a.pvMax, a.pv+v);
+  const real=a.pv-antes; fonte.st.cura+=real;
+  ui.flash.push({id:a.id, tipo:'cura'});
+  let m=`${esc(a.nome)} recupera ${real} PV e fica com ${a.pv} de ${a.pvMax}.`;
+  if (caido && a.pv>0){ a.morte={s:0,f:0}; a.estavel=false; m+=` <strong>${esc(a.nome)} se levanta e volta à luta.</strong>`; }
+  return m;
+}
+function causarDanoHeroi(h, v){
+  h.pv=Math.max(0, h.pv-v);
+  ui.flash.push({id:h.id, tipo:'dano'});
+  if (h.pv===0){ h.morte={s:0,f:0}; h.estavel=false; h.escondido=false; h.esquivando=false; return ` <strong>${esc(h.nome)} cai inconsciente!</strong>`; }
+  return '';
+}
+
+function testeMorte(){
+  const C=C_(), h=atual();
+  if (!C || C.ocupado || !h || h.tipo!=='heroi' || h.pv>0 || h.morto || h.estavel) return;
+  const r=d(20), N=esc(h.nome);
+  let msg=`<b>${N}</b> faz um teste contra a morte: d20 <span class="n">${r}</span>. `;
+  if (r===20){
+    h.pv=1; h.morte={s:0,f:0};
+    registrar(msg+`<strong>20 natural! ${N} levanta com 1 PV e age agora.</strong>`, 'critico');
+    mostrarDado({rotulo:'Teste contra a morte', valor:r, d20:true, conta:'d20 20', resultado:'Levanta com 1 PV', classe:'critico'});
+    C.t={acoes:1, bonus:1, ataques:0, furtivo:false};
+    ui.flash.push({id:h.id, tipo:'cura'});
+    renderCombate(); salvar(); focarPainel();
+    return;
+  }
+  let classe;
+  if (r===1){ h.morte.f+=2; msg+='1 natural: conta como duas falhas.'; classe='falha'; }
+  else if (r>=10){ h.morte.s++; msg+='Sucesso.'; classe='acerto'; }
+  else { h.morte.f++; msg+='Falha.'; classe='erro'; }
+  h.morte.f=Math.min(3, h.morte.f);
+  msg+=` Sucessos ${h.morte.s} de 3, falhas ${h.morte.f} de 3.`;
+  let resultado=classe==='acerto' ? 'Sucesso' : 'Falha';
+  if (h.morte.f>=3){ h.morto=true; msg+=` <strong>${N} morreu.</strong>`; resultado=`${h.nome} morreu`; }
+  else if (h.morte.s>=3){ h.estavel=true; msg+=` <strong>${N} está estável:</strong> continua inconsciente, mas fora de perigo.`; resultado='Estável'; }
+  registrar(msg, h.morto ? 'dano' : classe);
+  mostrarDado({rotulo:`Teste contra a morte de ${h.nome}`, valor:r, d20:true, conta:`d20 ${r}: 10 ou mais é sucesso`, resultado, classe});
+  C.ocupado=true; renderCombate();
+  depois(1200, ()=>{ G.combate.ocupado=false; proximoTurno(); });
+}
+
+/* ---------- inimigos ---------- */
+function turnoInimigo(e){
+  G.combate.ocupado=true; renderPainel();
+  depois(750, ()=>{
+    agirInimigo(e); renderCombate();
+    depois(1050, ()=>{ G.combate.ocupado=false; proximoTurno(); });
+  });
+}
+function agirInimigo(e){
+  const m=MONSTROS[e.especie], alvos=heroisDePe();
+  if (!alvos.length) return;
+  if (m.chefe){
+    if (!e.pronto){
+      const r=d(6);
+      if (r>=5){ e.pronto=true; registrar(`${esc(e.nome)} rola a recarga da Explosão sombria: d6 <span class="n">${r}</span>. Está pronta de novo.`, 'info'); }
+    }
+    if (e.pronto && (alvos.length>=2 || Math.random()<.5)){ e.pronto=false; explosao(e, alvos); return; }
+    if (!inimigosVivos().some(x=>x!==e) && e.ergueu<2 && G.combate.rodada>=2){ erguer(e); return; }
+  }
+  const alvo = Math.random()<.5 ? menorPv(alvos) : alvos[Math.floor(Math.random()*alvos.length)];
+  ataqueDeInimigo(e, alvo);
+}
+function ataqueDeInimigo(e, h){
+  const a=MONSTROS[e.especie].ataque;
+  const vant=!!MONSTROS[e.especie].matilha && inimigosVivos().some(o=>o!==e && o.especie===e.especie);
+  const desv=h.esquivando;
+  const modo=vant && !desv ? 1 : desv && !vant ? -1 : 0;
+  const r=rolarD20(modo, a.bonus+e.bonusDif, false), ca=caHeroi(h);
+  const crit=r.nat===20, falha=r.nat===1, acerto=!falha && (crit || r.total>=ca);
+  let motivo='';
+  if (vant && desv) motivo='Táticas de matilha e Esquivar se anulam. ';
+  else if (vant) motivo='Táticas de matilha dão vantagem. ';
+  else if (desv) motivo=`${esc(h.nome)} está esquivando, desvantagem. `;
+  let msg=`<b>${esc(e.nome)}</b> ataca <b>${esc(h.nome)}</b> com ${a.nome}. ${motivo}${textoD20(r)} contra CA ${ca}. `;
+  let resultado, classe;
+  if (!acerto){ msg+=falha ? '<strong>1 natural: erro automático.</strong>' : '<strong>Errou.</strong>'; resultado=falha ? '1 natural: erro automático' : `Errou ${h.nome}`; classe='erro'; }
+  else {
+    const dn=rolarDano(a.n, a.s, a.b, crit); let v=dn.total;
+    msg+=`${crit ? '<strong>Acerto crítico!</strong> Dados em dobro. ' : '<strong>Acertou.</strong> '}Rola ${dn.texto} de dano ${a.tipo}.`;
+    if (h.cls==='ladino' && h.nivel>=5 && !h.reacao){ h.reacao=true; v=Math.floor(v/2); msg+=` Esquiva Sobrenatural: ${esc(h.nome)} reduz o dano à metade, ${v}.`; }
+    msg+=causarDanoHeroi(h, v);
+    resultado=`${h.nome} sofre ${v} de dano`; classe='dano';
+  }
+  registrar(msg, acerto ? 'dano' : 'erro');
+  mostrarDado({rotulo:`${e.nome} contra ${h.nome}`, valor:r.nat, d20:true, conta:`${semTags(textoD20(r))} contra CA ${ca}`, resultado, classe:crit ? 'critico' : classe});
+}
+function explosao(e, alvos){
+  const cd=13+e.bonusDif, dados=rolar(3,6), total=soma(dados);
+  let msg=`<b>${esc(e.nome)}</b> solta a Explosão sombria: 3d6 = ${dados.join(' + ')} = <span class="n">${total}</span> de dano necrótico. Teste de resistência de Constituição, CD ${cd}.`;
+  for (const h of alvos){
+    const r=rolarD20(0, resistencia(h,'con'), h.abencoado), passou=r.total>=cd, v=passou ? Math.floor(total/2) : total;
+    msg+=` ${esc(h.nome)}: ${textoD20(r)}, ${passou ? 'passou e sofre metade' : 'falhou e sofre tudo'}, ${v}.`+causarDanoHeroi(h, v);
+  }
+  registrar(msg, 'dano');
+  mostrarDado({rotulo:'Explosão sombria', valor:total, d20:false, conta:`3d6: ${dados.join(' + ')} = ${total}`, resultado:`Constituição CD ${cd}: quem passa sofre metade`, classe:'dano'});
+}
+function erguer(e){
+  const C=G.combate, q=Math.max(1, Math.ceil(G.herois.length/2)), dif=DIFICULDADE[G.dif];
+  const ja=C.inimigos.filter(x=>x.especie==='esqueleto').length, novos=[];
+  for (let i=0;i<q;i++){
+    const s=criarInimigo('esqueleto', null, dif);
+    s.nome=`Esqueleto ${String.fromCharCode(65+ja+i)}`;
+    C.inimigos.push(s); novos.push(s);
+    C.ini[s.id]=C.ini[e.id];
+  }
+  C.ordem.splice(C.vez+1, 0, ...novos.map(s=>s.id));
+  e.ergueu++;
+  registrar(`<b>${esc(e.nome)}</b> bate o cajado no chão. <strong>${novos.map(s=>esc(s.nome)).join(' e ')} ${novos.length>1 ? 'se levantam' : 'se levanta'} dos ossos espalhados.</strong>`, 'dano');
+  mostrarDado({rotulo:'Erguer os mortos', valor:novos.length, d20:false, conta:`${novos.length} esqueleto${novos.length>1 ? 's' : ''} entra${novos.length>1 ? 'm' : ''} na iniciativa`, resultado:'Mais inimigos', classe:'dano'});
+}
+
+/* ---------- fim de combate ---------- */
+function encerrarCombate(vitoria){
+  const C=G.combate;
+  G.herois.forEach(h=>{ h.esquivando=false; h.escondido=false; h.abencoado=false; h.reacao=false; });
+  if (!vitoria){ G.fase='derrota'; salvar(); mostrarFim(); return; }
+  const feita=CENAS[G.cena], acordou=[];
+  G.herois.forEach(h=>{ if (!h.morto && h.pv<=0){ h.pv=1; h.morte={s:0,f:0}; h.estavel=false; acordou.push(h.nome); } });
+  G.cena++;
+  if (G.cena>=CENAS.length){ G.fase='vitoria'; G.combate=null; apagarSalvo(); mostrarFim(); return; }
+  const niveis=G.herois.map(subirNivel);
+  const longo=feita.descanso==='longo';
+  const descanso=G.herois.map(h=>longo ? descansoLongo(h) : descansoCurto(h));
+  if (feita.pocao) G.pocoes++;
+  G.interludio={titulo:feita.titulo, rodadas:C.rodada, longo, niveis, descanso, pocao:!!feita.pocao, acordou};
+  G.fase='historia'; G.combate=null;
+  salvar(); mostrarHistoria();
+}
+function tentarDeNovo(){
+  const f=JSON.parse(G.foto);
+  G.herois=f.herois; G.pocoes=f.pocoes; G.interludio=null; G.combate=null; G.fase='historia'; G.gid=uid();
+  salvar(); mostrarHistoria();
+}
+
+/* ---------- salvar ---------- */
+function salvar(){ try { if (G) localStorage.setItem(SAVE, JSON.stringify(G)); } catch {} }
+function lerSalvo(){ try { const s=localStorage.getItem(SAVE); return s ? JSON.parse(s) : null; } catch { return null; } }
+function apagarSalvo(){ try { localStorage.removeItem(SAVE); } catch {} }
+
+/* ---------- telas ---------- */
+function mostrarTela(nome){
+  ui.tela=nome;
+  for (const t of ['inicio','historia','combate','fim']) $('#tela-'+t).hidden = t!==nome;
+  $('#btn-menu').hidden = nome==='inicio';
+  window.scrollTo(0,0);
+}
+
+function mostrarInicio(){
+  mostrarTela('inicio');
+  const s=lerSalvo(), box=$('#salvo');
+  if (s && s.herois && ['historia','combate','derrota'].includes(s.fase)){
+    const onde = s.fase==='derrota' ? 'depois de uma derrota' : s.fase==='combate' && s.combate ? `rodada ${s.combate.rodada}` : 'entre cenas';
+    box.innerHTML=`<div class="salvo"><p><b>Aventura salva.</b> Cena ${Math.min(s.cena+1, CENAS.length)} de ${CENAS.length}, ${CENAS[Math.min(s.cena, CENAS.length-1)].titulo}, ${onde}. Grupo: ${s.herois.map(h=>esc(h.nome)).join(', ')}.</p><button type="button" class="btn btn-primary" id="btn-continuar">Continuar</button><button type="button" class="btn btn-quiet" id="btn-apagar">Apagar jogo salvo</button></div>`;
+  } else box.innerHTML='';
+  document.querySelectorAll('input[name="dif"]').forEach(r=>{ r.checked = r.value===setup.dif; });
+  renderElenco();
+}
+function infoRecruta(r, vig){
+  const h={cls:r.cls, abil:distribuir(r.valores, r.cls), nivel:1}, w=arma(h), p=CLASSES[r.cls].prio;
+  return `<p class="cls-desc">${CLASSES[r.cls].resumo}</p>
+  <dl class="atributos">${ATTRS.map(a=>`<div class="${a===p[0] ? 'principal' : ''}"><dt>${SIGLA[a]}</dt><dd>${h.abil[a]}</dd><dd class="mod">${sinal(mod(h.abil[a]))}</dd></div>`).join('')}</dl>
+  <p class="derivados">PV ${pvMax(h, vig)} · CA ${caHeroi(h)} · ${w.nome} ${sinal(w.bonus)}</p>
+  <p class="rolagens">${r.rolagens ? `Rolagens de 4d6, sem o menor dado: ${r.rolagens.map(x=>`${x.total} (${x.dados.join(' ')})`).join(', ')}.` : 'Valores padrão: 15, 14, 13, 12, 10 e 8.'} Bônus de origem: +2 em ${SIGLA[p[0]]} e +1 em ${SIGLA[p[1]]}.</p>`;
+}
+function renderElenco(){
+  const n=setup.elenco.length, vig=vigorPara(n);
+  $('#elenco').innerHTML=setup.elenco.map((r,i)=>`<fieldset class="recruta"><legend>Herói ${i+1}</legend>
+    <div class="campos">
+      <div class="campo"><label for="nome-${i}">Nome</label><input id="nome-${i}" data-i="${i}" value="${esc(r.nome)}" maxlength="18" autocomplete="off" spellcheck="false"></div>
+      <div class="campo"><label for="classe-${i}">Classe</label><select id="classe-${i}" data-i="${i}">${ORDEM_CLASSES.map(c=>`<option value="${c}"${c===r.cls ? ' selected' : ''}>${CLASSES[c].nome}</option>`).join('')}</select></div>
+    </div>
+    <div class="rec-info" id="rec-info-${i}">${infoRecruta(r, vig)}</div>
+    <div class="rec-botoes">
+      <button type="button" class="btn" data-rolar="${i}">Rolar atributos</button>
+      <button type="button" class="btn btn-quiet" data-padrao="${i}">Valores padrão</button>
+      ${n>1 ? `<button type="button" class="btn btn-quiet" data-remover="${i}">Remover</button>` : ''}
+    </div>
+  </fieldset>`).join('');
+  $('#btn-add').hidden = n>=4;
+  $('#aviso-vigor').textContent = vig>1 ? `Grupo pequeno: cada herói começa com ${vig===2 ? 'o dobro' : 'metade a mais'} de PV.` : '';
+}
+function atualizarInfos(){
+  const vig=vigorPara(setup.elenco.length);
+  setup.elenco.forEach((r,i)=>{ const el=$('#rec-info-'+i); if (el) el.innerHTML=infoRecruta(r, vig); });
+}
+function comecar(){
+  const vig=vigorPara(setup.elenco.length);
+  G={gid:uid(), dif:setup.dif, vigor:vig, herois:setup.elenco.map((r,i)=>criarHeroi(r,i,vig)), pocoes:3, cena:0, fase:'historia', interludio:null, combate:null, foto:null};
+  salvar(); mostrarHistoria();
+}
+
+function descreverInimigos(cena, n){
+  const partes=cena.inimigos(n).filter(x=>x[1]>0).map(([tipo,q])=>{ const m=MONSTROS[tipo]; return m.proprio ? m.nome : q===1 ? `um ${m.nome.toLowerCase()}` : `${q} ${m.plural}`; });
+  return partes.length>1 ? partes.slice(0,-1).join(', ')+' e '+partes[partes.length-1] : partes[0];
+}
+function mostrarHistoria(){
+  mostrarTela('historia');
+  const I=G.interludio, cena=CENAS[G.cena], n=G.herois.length, H=I ? 'h2' : 'h1';
+  let html='';
+  if (I){
+    html+=`<section aria-labelledby="int-t">
+      <p class="kicker">Vitória em ${I.rodadas} rodada${I.rodadas>1 ? 's' : ''}</p>
+      <h1 id="int-t" class="titulo-cena" tabindex="-1">${I.titulo}</h1>
+      ${I.acordou.length ? `<p>${I.acordou.map(esc).join(', ')} ${I.acordou.length>1 ? 'acordam' : 'acorda'} com 1 PV depois da luta.</p>` : ''}
+      <div class="colunas">
+        <div><h2 class="label">Subida de nível</h2><ul class="lista">${I.niveis.map(x=>`<li><b>${esc(x.nome)}</b> chega ao nível ${x.nivel}: +${x.ganho} PV máximos${x.notas.length ? '. '+x.notas.join(', ') : ''}.</li>`).join('')}</ul></div>
+        <div><h2 class="label">${I.longo ? 'Descanso longo' : 'Descanso curto'}</h2>${I.longo ? `<p>${TEXTO_CAPELA}</p>` : ''}<ul class="lista">${I.descanso.map(t=>`<li>${t}</li>`).join('')}</ul>
+        ${I.pocao ? `<p>Entre os restos da luta, vocês acham uma poção de cura. O grupo tem ${G.pocoes}.</p>` : ''}</div>
+      </div>
+    </section><hr class="separador">`;
+  }
+  html+=`<section aria-labelledby="cena-t">
+    <p class="kicker">Cena ${G.cena+1} de ${CENAS.length}</p>
+    <${H} id="cena-t" class="titulo-cena" tabindex="-1">${cena.titulo}</${H}>
+    ${G.cena===0 && !I ? `<p class="narracao abre">${INTRO}</p><p class="narracao">${cena.texto}</p>` : `<p class="narracao abre">${cena.texto}</p>`}
+    <p class="pela-frente"><span class="label">Pela frente</span><span>${descreverInimigos(cena, n)}</span></p>
+    <div><button type="button" class="btn btn-primary btn-grande" id="btn-iniciativa">Rolar iniciativa</button></div>
+  </section>`;
+  $('#tela-historia').innerHTML=html;
+  const t=$('#tela-historia h1'); if (t) t.focus({preventScroll:true});
+}
+function mostrarFim(){
+  mostrarTela('fim');
+  const v=G.fase==='vitoria';
+  const linhas=G.herois.map(h=>`<tr><th scope="row">${esc(h.nome)}</th><td>${CLASSES[h.cls].nome} ${h.nivel}${h.morto ? ', morto' : ''}</td><td class="num">${h.st.dano}</td><td class="num">${h.st.criticos}</td><td class="num">${h.st.cura}</td><td class="num">${h.st.abates}</td></tr>`).join('');
+  $('#tela-fim').innerHTML=`<section aria-labelledby="fim-t">
+    <p class="kicker">${v ? 'Fim da aventura' : `Derrota na cena ${G.cena+1} de ${CENAS.length}`}</p>
+    <h1 id="fim-t" class="titulo-cena" tabindex="-1">${v ? 'Pedra-Funda está salva' : CENAS[G.cena].titulo}</h1>
+    <p class="narracao abre">${v ? FIM_VITORIA : FIM_DERROTA}</p>
+    <div class="tabela-wrap"><table><caption class="label" style="text-align:left; padding-bottom:6px">Placar do grupo</caption>
+      <thead><tr><th scope="col">Herói</th><th scope="col">Classe e nível</th><th scope="col" class="num">Dano causado</th><th scope="col" class="num">Críticos</th><th scope="col" class="num">PV curados</th><th scope="col" class="num">Derrotou</th></tr></thead>
+      <tbody>${linhas}</tbody></table></div>
+    <div class="botoes">${v ? '' : '<button type="button" class="btn btn-primary btn-grande" id="btn-denovo">Tentar este combate de novo</button>'}
+      <button type="button" class="btn ${v ? 'btn-primary btn-grande' : ''}" id="btn-inicio">${v ? 'Jogar de novo' : 'Voltar ao início'}</button></div>
+  </section>`;
+  $('#fim-t').focus({preventScroll:true});
+}
+
+function mostrarDado(o){
+  const C=C_(); if (C) C.dado=o;
+  const el=$('#dado'), num=$('#dado-num');
+  $('#bandeja-rotulo').textContent=o.rotulo;
+  $('#bandeja-conta').textContent=o.conta||'';
+  const res=$('#bandeja-resultado'); res.textContent=o.resultado||''; res.className='bandeja-resultado '+(o.classe||'');
+  $('.forma-d20').hidden=!o.d20; $('.forma-soma').hidden=!!o.d20;
+  el.classList.toggle('soma', !o.d20);
+  el.classList.toggle('critico', o.classe==='critico');
+  el.classList.toggle('falha', o.classe==='falha');
+  clearInterval(mostrarDado.t);
+  if (SPEED===0 || reduzMovimento() || o.semAnimacao || typeof o.valor!=='number'){ num.textContent=o.valor; return; }
+  el.classList.remove('rolar'); void el.offsetWidth; el.classList.add('rolar');
+  let k=0;
+  mostrarDado.t=setInterval(()=>{ num.textContent = o.d20 ? d(20) : Math.max(1, Math.round(o.valor*(.4+Math.random()*1.2))); if (++k>=8){ clearInterval(mostrarDado.t); num.textContent=o.valor; } }, 50);
+}
+
+function mostrarCombate(){
+  mostrarTela('combate'); renderDiario(); renderCombate();
+  if (G.combate.dado) mostrarDado({...G.combate.dado, semAnimacao:true});
+}
+function renderCombate(){
+  const C=G.combate;
+  $('#c-cena').textContent=`Cena ${G.cena+1} de ${CENAS.length}`;
+  $('#c-titulo').textContent=CENAS[G.cena].titulo;
+  $('#c-rodada').textContent=`Rodada ${C.rodada}`;
+  $('#t-grupo').textContent=`Grupo · ${G.pocoes} ${G.pocoes===1 ? 'poção' : 'poções'}`;
+  renderIniciativa(); renderGrupo(); renderInimigos(); renderPainel();
+  ui.flash=[];
+}
+function renderIniciativa(){
+  const C=G.combate;
+  $('#iniciativa').innerHTML=C.ordem.map((id,i)=>{
+    const c=porId(id), fora=c.tipo==='inimigo' ? c.pv<=0 : c.morto, agora=i===C.vez;
+    return `<li class="${c.tipo}${agora ? ' agora' : ''}${fora ? ' fora' : ''}"${agora ? ' aria-current="true"' : ''}><span class="ini-n">${C.ini[id]}</span><span>${esc(c.nome)}</span>${fora ? '<span class="sr-only">, fora do combate</span>' : ''}</li>`;
+  }).join('');
+  const li=$('#iniciativa .agora'), w=$('#ini-wrap');
+  if (li) w.scrollLeft=li.offsetLeft-w.clientWidth/2+li.clientWidth/2;
+}
+function classeFlash(id){ const f=ui.flash.filter(x=>x.id===id).pop(); return f ? ' flash-'+f.tipo : ''; }
+function barraPv(c){
+  const p=Math.max(0, c.pv/c.pvMax), nivel=p>.5 ? 'ok' : p>.25 ? 'meio' : 'baixo';
+  return `<div class="pv"><span class="pv-txt">PV <b>${c.pv}</b> de ${c.pvMax}</span><span class="barra" aria-hidden="true"><i class="${nivel}" style="width:${(p*100).toFixed(1)}%"></i></span></div>`;
+}
+function renderGrupo(){
+  const a=atual(), alvejando=ui.modo && ui.modo.alvo==='aliado';
+  $('#grupo').innerHTML=G.herois.map(h=>{
+    const tags=[];
+    if (h.morto) tags.push(['Morto','perigo']);
+    else if (h.pv<=0) tags.push(h.estavel ? ['Caído e estável','perigo'] : [`Caído · sucessos ${h.morte.s}/3 · falhas ${h.morte.f}/3`,'perigo']);
+    if (h.esquivando) tags.push(['Esquivando','bom']);
+    if (h.escondido) tags.push(['Escondido','bom']);
+    if (h.abencoado) tags.push(['Abençoado','bom']);
+    const cls=`ficha heroi${a===h ? ' agora' : ''}${h.pv<=0 && !h.morto ? ' caido' : ''}${h.morto ? ' morto' : ''}${alvejando && !h.morto ? ' alvejavel' : ''}${classeFlash(h.id)}`;
+    return `<article class="${cls}" data-id="${h.id}">
+      <div class="ficha-topo"><span class="token" aria-hidden="true">${esc(inicial(h))}</span><div class="ficha-id"><h3>${esc(h.nome)}</h3><p class="sub">${CLASSES[h.cls].nome} · nível ${h.nivel}</p></div>${a===h ? '<span class="vez">Na vez</span>' : ''}</div>
+      ${barraPv(h)}
+      <dl class="mini"><div><dt>CA</dt><dd>${caHeroi(h)}</dd></div><div><dt>Ataque</dt><dd>${sinal(arma(h).bonus)}</dd></div>${espacosMax(h) ? `<div><dt>Espaços</dt><dd>${h.espacos} de ${espacosMax(h)}</dd></div>` : ''}</dl>
+      ${tags.length ? `<ul class="tags">${tags.map(([t,c])=>`<li class="${c}">${t}</li>`).join('')}</ul>` : ''}
+    </article>`;
+  }).join('');
+}
+function renderInimigos(){
+  const a=atual(), alvejando=ui.modo && ui.modo.alvo==='inimigo';
+  $('#inimigos').innerHTML=G.combate.inimigos.map(e=>{
+    const m=MONSTROS[e.especie], fora=e.pv<=0;
+    const cls=`ficha inimigo${a===e ? ' agora' : ''}${fora ? ' fora' : ''}${alvejando && !fora ? ' alvejavel' : ''}${classeFlash(e.id)}`;
+    return `<article class="${cls}" data-id="${e.id}">
+      <div class="ficha-topo"><span class="token" aria-hidden="true">${esc(inicial(e))}</span><div class="ficha-id"><h3>${esc(e.nome)}</h3><p class="sub">CA ${e.ca} · ${m.ataque.nome} ${sinal(m.ataque.bonus+e.bonusDif)}</p></div>${a===e ? '<span class="vez">Na vez</span>' : ''}</div>
+      ${fora ? '<p class="derrotado">Derrotado</p>' : barraPv(e)}
+      ${m.tracos && !fora ? `<ul class="tracos">${m.tracos.map(t=>`<li>${t}</li>`).join('')}</ul>` : ''}
+    </article>`;
+  }).join('');
+}
+function renderPainel(){
+  const C=G.combate, a=atual(), p=$('#painel');
+  if (!a) return;
+  let html='';
+  if (a.tipo==='inimigo'){
+    html=`<h2 id="painel-titulo" tabindex="-1">Vez de ${esc(a.nome)}</h2><p class="muted">Os inimigos jogam sozinhos. O resultado aparece na bandeja e no diário.</p>`;
+  } else if (C.ocupado){
+    html=`<h2 id="painel-titulo" tabindex="-1">Vez de ${esc(a.nome)}</h2><p class="muted">Passando para o próximo da iniciativa.</p>`;
+  } else if (a.pv<=0){
+    html=`<h2 id="painel-titulo" tabindex="-1">${esc(a.nome)} está caído</h2>
+      <p>Role um d20. Com 10 ou mais é sucesso. Com 1, são duas falhas. Com 20, ${esc(a.nome)} levanta com 1 PV.</p>
+      <p class="placar">Sucessos ${a.morte.s} de 3 · Falhas ${a.morte.f} de 3</p>
+      <div><button type="button" class="btn btn-primary btn-grande" data-cmd="morte">Rolar teste contra a morte</button></div>`;
+  } else if (ui.modo){
+    const x=acoesDe(a).find(y=>y.id===ui.modo.id);
+    const lista = ui.modo.alvo==='inimigo' ? inimigosVivos() : G.herois.filter(h=>!h.morto);
+    html=`<h2 id="painel-titulo" tabindex="-1">${ui.modo.extra ? 'Segundo ataque: escolha o alvo' : 'Escolha o alvo'}</h2>
+      <p class="muted">${x.nome} · ${x.det}</p>
+      <div class="acoes" role="group" aria-labelledby="painel-titulo">${lista.map(c=>`<button type="button" class="act" data-alvo="${c.id}"><span class="act-nome">${esc(c.nome)}</span><span class="act-det">PV ${c.pv} de ${c.pvMax}${c.tipo==='inimigo' ? ` · CA ${c.ca}` : c.pv<=0 ? ' · caído' : ''}</span></button>`).join('')}</div>
+      <div><button type="button" class="btn btn-quiet" data-cmd="${ui.modo.extra ? 'pular' : 'voltar'}">${ui.modo.extra ? 'Pular o segundo ataque' : 'Voltar'}</button></div>`;
+  } else {
+    const acoes=acoesDe(a), t=C.t;
+    const rec=[`<span class="${t.acoes>0 ? '' : 'gasto'}">Ação</span>`, `<span class="${t.bonus>0 ? '' : 'gasto'}">Ação bônus</span>`];
+    if (espacosMax(a)) rec.push(`<span>Espaços de magia ${a.espacos} de ${espacosMax(a)}</span>`);
+    html=`<h2 id="painel-titulo" tabindex="-1">Vez de ${esc(a.nome)}</h2><p class="recursos">${rec.join('')}</p>`;
+    for (const [g, rot] of [['acao','Ação'],['bonus','Ação bônus'],['livre','Recurso de classe']]){
+      const itens=acoes.filter(x=>x.grupo===g); if (!itens.length) continue;
+      html+=`<div class="grupo-acoes" role="group" aria-labelledby="g-${g}"><h3 id="g-${g}">${rot}</h3><div class="acoes">${itens.map(x=>`<button type="button" class="act" data-acao="${x.id}"${x.ok ? '' : ' disabled'}><span class="act-nome">${x.nome}${x.custo ? ` <span class="custo">${x.custo} espaço${x.custo>1 ? 's' : ''}</span>` : ''}</span><span class="act-det">${x.ok ? x.det : x.motivo}</span></button>`).join('')}</div></div>`;
+    }
+    html+=`<div class="painel-fim"><button type="button" class="btn" data-cmd="encerrar">Encerrar a vez</button></div>`;
+  }
+  p.innerHTML=html;
+}
+function focarPainel(){
+  const t=$('#painel-titulo'); if (!t) return;
+  t.focus({preventScroll:true});
+  const r=t.getBoundingClientRect();
+  if (r.top<0 || r.bottom>window.innerHeight) t.scrollIntoView({block:'center', behavior:reduzMovimento() ? 'auto' : 'smooth'});
+}
+
+function retomar(){
+  if (!G) return mostrarInicio();
+  G.gid=uid();
+  if (G.fase==='historia') return mostrarHistoria();
+  if (G.fase==='derrota' || G.fase==='vitoria') return mostrarFim();
+  if (G.fase==='combate' && G.combate){
+    G.combate.ocupado=false; ui.modo=null; G.combate.turnoId=++SEQ;
+    mostrarCombate();
+    const a=atual();
+    if (a.tipo==='inimigo') turnoInimigo(a); else focarPainel();
+    return;
+  }
+  mostrarInicio();
+}
+
+/* ---------- eventos ---------- */
+$('#painel').addEventListener('click', ev=>{
+  const b=ev.target.closest('button'); if (!b || b.disabled) return;
+  if (b.dataset.acao) return escolherAcao(b.dataset.acao);
+  if (b.dataset.alvo) return ui.modo && executar(ui.modo.id, b.dataset.alvo);
+  const cmd=b.dataset.cmd;
+  if (cmd==='morte') testeMorte();
+  else if (cmd==='encerrar') encerrarVez();
+  else if (cmd==='voltar'){ ui.modo=null; renderCombate(); focarPainel(); }
+  else if (cmd==='pular'){ G.combate.t.ataques=0; ui.modo=null; depoisDaAcao(); }
+});
+for (const sel of ['#inimigos','#grupo']){
+  $(sel).addEventListener('click', ev=>{
+    const card=ev.target.closest('.alvejavel'); if (!card || !ui.modo) return;
+    executar(ui.modo.id, card.dataset.id);
+  });
+}
+document.addEventListener('keydown', ev=>{
+  if (ev.key==='Escape' && ui.tela==='combate' && ui.modo && !ui.modo.extra){ ui.modo=null; renderCombate(); focarPainel(); }
+});
+$('#pular-acoes').addEventListener('click', ev=>{ ev.preventDefault(); focarPainel(); });
+
+$('#elenco').addEventListener('input', ev=>{
+  const el=ev.target; if (el.tagName!=='INPUT') return;
+  setup.elenco[+el.dataset.i].nome=el.value;
+});
+$('#elenco').addEventListener('change', ev=>{
+  const el=ev.target; if (el.tagName!=='SELECT') return;
+  setup.elenco[+el.dataset.i].cls=el.value; atualizarInfos();
+});
+$('#elenco').addEventListener('click', ev=>{
+  const b=ev.target.closest('button'); if (!b) return;
+  if (b.dataset.rolar){
+    const i=+b.dataset.rolar, r=setup.elenco[i], rol=rolarAtributos();
+    r.rolagens=rol; r.valores=rol.map(x=>x.total); atualizarInfos();
+    const ab=distribuir(r.valores, r.cls);
+    anunciar(`${r.nome||'Herói'}: ${ATTRS.map(a=>`${SIGLA[a]} ${ab[a]}`).join(', ')}.`);
+  } else if (b.dataset.padrao){
+    const r=setup.elenco[+b.dataset.padrao]; r.rolagens=null; r.valores=[...PADRAO]; atualizarInfos();
+    anunciar('Valores padrão de volta.');
+  } else if (b.dataset.remover){
+    const i=+b.dataset.remover; setup.elenco.splice(i,1); renderElenco();
+    const prox=$('#nome-'+Math.min(i, setup.elenco.length-1)); if (prox) prox.focus();
+  }
+});
+$('#btn-add').addEventListener('click', ()=>{
+  if (setup.elenco.length>=4) return;
+  const usados=setup.elenco.map(r=>r.nome), cls=ORDEM_CLASSES.find(c=>!setup.elenco.some(r=>r.cls===c)) || 'guerreiro';
+  setup.elenco.push({nome:NOMES.find(n=>!usados.includes(n)) || 'Herói', cls, valores:[...PADRAO], rolagens:null});
+  renderElenco();
+  $('#nome-'+(setup.elenco.length-1)).focus();
+});
+document.querySelectorAll('input[name="dif"]').forEach(r=>r.addEventListener('change', ()=>{ if (r.checked) setup.dif=r.value; }));
+$('#btn-comecar').addEventListener('click', comecar);
+$('#salvo').addEventListener('click', ev=>{
+  const b=ev.target.closest('button'); if (!b) return;
+  if (b.id==='btn-continuar'){ G=lerSalvo(); retomar(); }
+  else if (b.id==='btn-apagar'){
+    if (b.dataset.confirmar){ apagarSalvo(); mostrarInicio(); $('#btn-comecar').focus(); }
+    else { b.dataset.confirmar='1'; b.textContent='Toque de novo para apagar'; }
+  }
+});
+$('#tela-historia').addEventListener('click', ev=>{ if (ev.target.closest('#btn-iniciativa')) iniciarCombate(); });
+$('#tela-fim').addEventListener('click', ev=>{
+  if (ev.target.closest('#btn-denovo')) tentarDeNovo();
+  else if (ev.target.closest('#btn-inicio')){ if (G && G.fase!=='vitoria') apagarSalvo(); G=null; mostrarInicio(); $('#btn-comecar').focus(); }
+});
+$('#btn-menu').addEventListener('click', ()=>{ if (G && G.combate) G.combate.ocupado=false; salvar(); G=null; mostrarInicio(); });
+const optGrande=$('#opt-grande');
+try { if (localStorage.getItem('masmorra-d20:grande')==='1'){ optGrande.checked=true; document.documentElement.classList.add('grande'); } } catch {}
+optGrande.addEventListener('change', ()=>{
+  document.documentElement.classList.toggle('grande', optGrande.checked);
+  try { localStorage.setItem('masmorra-d20:grande', optGrande.checked ? '1' : '0'); } catch {}
+});
+document.querySelectorAll('.regras-corpo').forEach(el=>{ el.innerHTML=REGRAS; });
+
+/* ---------- partida ---------- */
+try { if (window.claude && window.claude.hot && window.claude.hot.snapshot) window.claude.hot.snapshot(()=>({G, setup})); } catch {}
+function iniciar(dados){
+  if (dados && dados.setup) setup=dados.setup;
+  if (dados && dados.G){ G=dados.G; retomar(); } else mostrarInicio();
+}
+if (window.claude && window.claude.hot && window.claude.hot.ready) window.claude.hot.ready(iniciar);
+else iniciar((window.claude && window.claude.hot && window.claude.hot.data) || {});
+</script>
+</body>
+</html>
